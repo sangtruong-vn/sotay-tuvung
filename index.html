@@ -11,6 +11,12 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Cấu hình 3D cho Flashcard */
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen flex overflow-hidden">
@@ -21,8 +27,14 @@
             <i class="fas fa-globe-asia text-blue-600 text-2xl"></i>
             <h1 class="font-bold text-lg text-slate-800">Từ Vựng VN-EN-JP-CN</h1>
         </div>
-        <div class="flex-1 overflow-y-auto custom-scrollbar p-3" id="topic-list">
-            <!-- Render topics here -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-3" id="sidebar-menu">
+            <button id="btn-flashcard" class="w-full text-left px-4 py-3 mb-4 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-700 hover:bg-indigo-100 transition-colors flex items-center gap-3">
+                <i class="fas fa-layer-group w-5 text-center text-indigo-500"></i> <span class="font-bold">Ôn tập Flashcard</span>
+            </button>
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">Các chủ đề</div>
+            <div id="topic-list">
+                <!-- Render topics here -->
+            </div>
         </div>
     </aside>
 
@@ -63,6 +75,49 @@
                     <div id="sentences-list" class="grid gap-4">
                         <!-- Render sentences here -->
                     </div>
+                </div>
+
+                <!-- Flashcard Area -->
+                <div id="flashcard-area" class="hidden h-full flex flex-col items-center pt-4 pb-10">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Flashcard Tổng Hợp (<span id="fc-count">0</span> từ)</h2>
+                    
+                    <div id="flashcard-container" class="perspective-1000 w-full max-w-lg h-96 cursor-pointer mb-8">
+                        <div id="flashcard-inner" class="relative w-full h-full text-center transition-transform duration-500 transform-style-3d shadow-xl rounded-2xl">
+                            <!-- Mặt trước: Tiếng Việt -->
+                            <div class="absolute w-full h-full backface-hidden bg-white border-2 border-slate-100 rounded-2xl flex flex-col justify-center items-center p-8">
+                                <span class="text-sm text-slate-400 font-medium uppercase tracking-widest mb-4">Tiếng Việt</span>
+                                <h3 class="text-4xl font-bold text-slate-800" id="fc-vi">Word</h3>
+                                <p class="text-slate-400 mt-8 text-sm"><i class="fas fa-hand-pointer mr-2"></i>Chạm để lật</p>
+                            </div>
+                            <!-- Mặt sau: Ngoại ngữ -->
+                            <div class="absolute w-full h-full backface-hidden bg-indigo-50 border-2 border-indigo-100 rounded-2xl flex flex-col justify-center items-center p-8 rotate-y-180">
+                                <div class="w-full grid grid-cols-1 gap-4 divide-y divide-indigo-200/50 text-left">
+                                    <div class="pb-2">
+                                        <span class="text-xs font-bold text-indigo-500 uppercase">English</span>
+                                        <div class="text-2xl font-bold text-slate-800" id="fc-en">Word</div>
+                                    </div>
+                                    <div class="py-2">
+                                        <span class="text-xs font-bold text-rose-500 uppercase">Tiếng Nhật</span>
+                                        <div class="text-2xl font-bold text-slate-800" id="fc-jp-word">Word</div>
+                                        <div class="text-sm text-slate-600" id="fc-jp-pron">pron</div>
+                                    </div>
+                                    <div class="pt-2">
+                                        <span class="text-xs font-bold text-amber-600 uppercase">Tiếng Trung</span>
+                                        <div class="text-2xl font-bold text-slate-800" id="fc-cn-word">Word</div>
+                                        <div class="text-sm text-slate-600" id="fc-cn-pron">pron</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Điều khiển Flashcard -->
+                    <div class="flex items-center gap-4">
+                        <button id="fc-prev" class="w-12 h-12 rounded-full bg-white shadow text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition"><i class="fas fa-chevron-left"></i></button>
+                        <button id="fc-shuffle" class="px-6 py-3 rounded-full bg-white shadow text-slate-600 font-medium hover:text-indigo-600 hover:bg-slate-50 transition"><i class="fas fa-random mr-2"></i>Trộn bài</button>
+                        <button id="fc-next" class="w-12 h-12 rounded-full bg-white shadow text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div class="mt-6 text-slate-500 font-medium bg-white px-4 py-1 rounded-full shadow-sm" id="fc-progress">1 / 100</div>
                 </div>
 
                 <div id="welcome-area" class="h-full flex flex-col items-center justify-center text-center text-slate-500 py-20">
@@ -397,10 +452,20 @@
         const topicListEl = document.getElementById('topic-list');
         const welcomeArea = document.getElementById('welcome-area');
         const contentArea = document.getElementById('content-area');
+        const flashcardArea = document.getElementById('flashcard-area');
+        const btnFlashcard = document.getElementById('btn-flashcard');
         const titleEl = document.getElementById('topic-title');
         const vocabTableBody = document.getElementById('vocab-table-body');
         const sentencesList = document.getElementById('sentences-list');
         let currentActiveBtn = null;
+
+        // Xử lý dữ liệu Flashcard
+        let allVocab = [];
+        let currentFcIndex = 0;
+        database.forEach(topic => {
+            allVocab = allVocab.concat(topic.vocab);
+        });
+        document.getElementById('fc-count').innerText = allVocab.length;
 
         // Render Sidebar
         database.forEach(topic => {
@@ -416,10 +481,69 @@
                 btn.classList.add('bg-blue-50', 'border-blue-100', 'text-blue-700');
                 btn.querySelector('i').classList.replace('text-slate-400', 'text-blue-500');
                 currentActiveBtn = btn;
+                btnFlashcard.classList.remove('bg-indigo-100', 'border-indigo-300'); // Tắt active của flashcard
+                
+                flashcardArea.classList.add('hidden');
                 renderTopic(topic);
             };
             topicListEl.appendChild(btn);
         });
+
+        // Xử lý sự kiện nút Flashcard Tổng hợp
+        btnFlashcard.onclick = () => {
+            if (currentActiveBtn) {
+                currentActiveBtn.classList.remove('bg-blue-50', 'border-blue-100', 'text-blue-700');
+                currentActiveBtn.querySelector('i').classList.replace('text-blue-500', 'text-slate-400');
+                currentActiveBtn = null;
+            }
+            btnFlashcard.classList.add('bg-indigo-100', 'border-indigo-300');
+            
+            welcomeArea.classList.add('hidden');
+            contentArea.classList.add('hidden');
+            flashcardArea.classList.remove('hidden');
+            
+            currentFcIndex = 0;
+            renderFlashcard();
+        };
+
+        // Hàm Render một thẻ Flashcard
+        const flashcardInner = document.getElementById('flashcard-inner');
+        function renderFlashcard() {
+            if (allVocab.length === 0) return;
+            const v = allVocab[currentFcIndex];
+            
+            // Mặt trước
+            document.getElementById('fc-vi').innerText = v.vi;
+            // Mặt sau
+            document.getElementById('fc-en').innerText = v.en;
+            document.getElementById('fc-jp-word').innerText = v.jp.word;
+            document.getElementById('fc-jp-pron').innerText = `🎧 ${v.jp.pron} (HV: ${v.jp.hv})`;
+            document.getElementById('fc-cn-word').innerText = v.cn.word;
+            document.getElementById('fc-cn-pron').innerText = `🎧 ${v.cn.pron} (HV: ${v.cn.hv})`;
+            
+            document.getElementById('fc-progress').innerText = `${currentFcIndex + 1} / ${allVocab.length}`;
+            flashcardInner.classList.remove('rotate-y-180'); // Mặc định hiển thị mặt Tiếng Việt
+        }
+
+        // Lật thẻ
+        document.getElementById('flashcard-container').onclick = () => {
+            flashcardInner.classList.toggle('rotate-y-180');
+        };
+
+        // Nút điều hướng Flashcard
+        document.getElementById('fc-next').onclick = () => {
+            currentFcIndex = (currentFcIndex + 1) % allVocab.length;
+            renderFlashcard();
+        };
+        document.getElementById('fc-prev').onclick = () => {
+            currentFcIndex = (currentFcIndex - 1 + allVocab.length) % allVocab.length;
+            renderFlashcard();
+        };
+        document.getElementById('fc-shuffle').onclick = () => {
+            allVocab = allVocab.sort(() => Math.random() - 0.5);
+            currentFcIndex = 0;
+            renderFlashcard();
+        };
 
         // Hàm render nội dung bài học
         function renderTopic(topic) {
