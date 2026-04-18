@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sổ Tay Từ Vựng Đa Ngôn Ngữ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-xl flex flex-col z-10 h-full">
+        <div class="p-5 border-b border-slate-100 flex items-center gap-3">
+            <i class="fas fa-globe-asia text-blue-600 text-2xl"></i>
+            <h1 class="font-bold text-lg text-slate-800">Từ Vựng VN-EN-JP-CN</h1>
+        </div>
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-3" id="topic-list">
+            <!-- Render topics here -->
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
+        <!-- Mobile Header -->
+        <div class="md:hidden p-4 bg-white shadow-sm flex items-center justify-between">
+            <h1 class="font-bold text-lg text-slate-800">Từ Vựng Đa Ngôn Ngữ</h1>
+            <button id="mobile-menu-btn" class="p-2"><i class="fas fa-bars"></i></button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
+            <div class="max-w-6xl mx-auto">
+                <div id="content-area" class="hidden">
+                    <h2 id="topic-title" class="text-3xl font-bold mb-6 text-slate-800 border-l-4 border-blue-500 pl-4">Tiêu đề</h2>
+                    
+                    <!-- Vocabulary Table -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-600 text-sm uppercase tracking-wider">
+                                        <th class="p-4 font-semibold border-b w-1/5">Tiếng Việt</th>
+                                        <th class="p-4 font-semibold border-b w-1/5">English</th>
+                                        <th class="p-4 font-semibold border-b w-1/4">Tiếng Nhật</th>
+                                        <th class="p-4 font-semibold border-b w-1/4">Tiếng Trung</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vocab-table-body" class="divide-y divide-slate-100">
+                                    <!-- Render vocab here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Sentences -->
+                    <h3 class="text-xl font-bold mb-4 text-slate-800"><i class="fas fa-comments text-blue-500 mr-2"></i>Mẫu câu thông dụng</h3>
+                    <div id="sentences-list" class="grid gap-4">
+                        <!-- Render sentences here -->
+                    </div>
+                </div>
+
+                <div id="welcome-area" class="h-full flex flex-col items-center justify-center text-center text-slate-500 py-20">
+                    <i class="fas fa-language text-6xl mb-4 text-slate-300"></i>
+                    <h2 class="text-2xl font-bold text-slate-600 mb-2">Chào mừng đến với Sổ tay Từ Vựng</h2>
+                    <p>Vui lòng chọn một chủ đề ở menu bên trái để bắt đầu học.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const database = [
+            {
+                id: "giadinh",
+                icon: "fa-users",
+                title: "Gia đình (Family)",
+                vocab: [
+                    { vi: "Bố / Cha", en: "Father", jp: { word: "父", pron: "ちち / Chichi", hv: "Phụ" }, cn: { word: "爸爸", pron: "bàba", hv: "Ba ba" } },
+                    { vi: "Mẹ", en: "Mother", jp: { word: "母", pron: "はは / Haha", hv: "Mẫu" }, cn: { word: "妈妈", pron: "māma", hv: "Ma ma" } },
+                    { vi: "Anh trai", en: "Older brother", jp: { word: "兄", pron: "あに / Ani", hv: "Huynh" }, cn: { word: "哥哥", pron: "gēge", hv: "Ca ca" } },
+                    { vi: "Em gái", en: "Younger sister", jp: { word: "妹", pron: "いもうと / Imōto", hv: "Muội" }, cn: { word: "妹妹", pron: "mèimei", hv: "Muội muội" } }
+                ],
+                sentences: [
+                    { vi: "Gia đình tôi có 4 người.", en: "There are 4 people in my family.", jp: "私の家族は四人です。(Watashi no kazoku wa yonin desu.)", cn: "我家有四口人。(Wǒ jiā yǒu sì kǒu rén.)" },
+                    { vi: "Tôi yêu gia đình của mình.", en: "I love my family.", jp: "私は家族を愛しています。(Watashi wa kazoku o aishiteimasu.)", cn: "我爱我的家人。(Wǒ ài wǒ de jiārén.)" }
+                ]
+            },
+            {
+                id: "vatdungnha",
+                icon: "fa-couch",
+                title: "Vật dụng trong nhà",
+                vocab: [
+                    { vi: "Cái bàn", en: "Table", jp: { word: "机", pron: "つくえ / Tsukue", hv: "Kỷ" }, cn: { word: "桌子", pron: "zhuōzi", hv: "Trác tử" } },
+                    { vi: "Cái ghế", en: "Chair", jp: { word: "椅子", pron: "いす / Isu", hv: "Y tử" }, cn: { word: "椅子", pron: "yǐzi", hv: "Y tử" } },
+                    { vi: "Tủ lạnh", en: "Refrigerator", jp: { word: "冷蔵庫", pron: "れいぞうこ / Reizōko", hv: "Lãnh tàng khố" }, cn: { word: "冰箱", pron: "bīngxiāng", hv: "Băng sương" } },
+                    { vi: "Tivi", en: "Television", jp: { word: "テレビ", pron: "Terebi", hv: "Không có (Từ ngoại lai)" }, cn: { word: "电视", pron: "diànshì", hv: "Điện thị" } }
+                ],
+                sentences: [
+                    { vi: "Trong phòng khách có một cái tivi.", en: "There is a TV in the living room.", jp: "居間にテレビがあります。(Ima ni terebi ga arimasu.)", cn: "客厅里有一台电视。(Kètīng lǐ yǒu yī tái diànshì.)" },
+                    { vi: "Vui lòng mở tủ lạnh.", en: "Please open the fridge.", jp: "冷蔵庫を開けてください。(Reizōko o akete kudasai.)", cn: "请打开冰箱。(Qǐng dǎkāi bīngxiāng.)" }
+                ]
+            },
+            {
+                id: "vatdungcongty",
+                icon: "fa-print",
+                title: "Vật dụng công ty",
+                vocab: [
+                    { vi: "Máy tính", en: "Computer", jp: { word: "電算機", pron: "でんさんき / Densanki", hv: "Điện toán cơ" }, cn: { word: "电脑", pron: "diànnǎo", hv: "Điện não" } },
+                    { vi: "Máy in", en: "Printer", jp: { word: "印刷機", pron: "いんさつき / Insatsuki", hv: "Ấn loát cơ" }, cn: { word: "打印机", pron: "dǎyìnjī", hv: "Đả ấn cơ" } },
+                    { vi: "Tài liệu", en: "Document", jp: { word: "書類", pron: "しょるい / Shorui", hv: "Thư loại" }, cn: { word: "文件", pron: "wénjiàn", hv: "Văn kiện" } },
+                    { vi: "Phòng họp", en: "Meeting room", jp: { word: "会議室", pron: "かいぎしつ / Kaigishitsu", hv: "Hội nghị thất" }, cn: { word: "会议室", pron: "huìyì shì", hv: "Hội nghị thất" } }
+                ],
+                sentences: [
+                    { vi: "Vui lòng in tài liệu này giúp tôi.", en: "Please print this document for me.", jp: "この書類を印刷してください。(Kono shorui o insatsu shite kudasai.)", cn: "请帮我打印这份文件。(Qǐng bāng wǒ dǎyìn zhè fèn wénjiàn.)" },
+                    { vi: "Cuộc họp diễn ra ở phòng họp số 1.", en: "The meeting takes place in meeting room 1.", jp: "会議は第一会議室で行われます。(Kaigi wa dai-ichi kaigishitsu de okonawaremasu.)", cn: "会议在一号会议室举行。(Huìyì zài yī hào huìyì shì jǔxíng.)" }
+                ]
+            },
+            {
+                id: "tuyendung",
+                icon: "fa-user-tie",
+                title: "Chuyên ngành tuyển dụng",
+                vocab: [
+                    { vi: "Phỏng vấn", en: "Interview", jp: { word: "面接", pron: "めんせつ / Mensetsu", hv: "Diện tiếp" }, cn: { word: "面试", pron: "miànshì", hv: "Diện thí" } },
+                    { vi: "Sơ yếu lý lịch", en: "Resume / CV", jp: { word: "履歴書", pron: "りれきしょ / Rirekisho", hv: "Lí lịch thư" }, cn: { word: "简历", pron: "jiǎnlì", hv: "Giản lịch" } },
+                    { vi: "Tiền lương", en: "Salary", jp: { word: "給料", pron: "きゅうりょう / Kyūryō", hv: "Cấp liệu" }, cn: { word: "薪水", pron: "xīnshuǐ", hv: "Tân thủy" } },
+                    { vi: "Ứng viên", en: "Candidate", jp: { word: "候補者", pron: "こうほしゃ / Kōhosha", hv: "Hậu bổ giả" }, cn: { word: "候选人", pron: "hòuxuǎnrén", hv: "Hậu tuyển nhân" } }
+                ],
+                sentences: [
+                    { vi: "Bạn có mang theo sơ yếu lý lịch không?", en: "Did you bring your resume?", jp: "履歴書を持ってきましたか？(Rirekisho o motte kimashita ka?)", cn: "你带简历了吗？(Nǐ dài jiǎnlì le ma?)" },
+                    { vi: "Mức lương mong muốn của bạn là bao nhiêu?", en: "What is your expected salary?", jp: "希望給与はいくらですか？(Kibō kyūyo wa ikura desu ka?)", cn: "你的期望薪水是多少？(Nǐ de qīwàng xīnshuǐ shì duōshǎo?)" }
+                ]
+            },
+            {
+                id: "phuongtien",
+                icon: "fa-car",
+                title: "Phương tiện đi lại",
+                vocab: [
+                    { vi: "Xe máy", en: "Motorbike", jp: { word: "単車", pron: "たんしゃ / Tansha", hv: "Đơn xa" }, cn: { word: "摩托车", pron: "mótuōchē", hv: "Ma thác xa" } },
+                    { vi: "Ô tô", en: "Car", jp: { word: "自動車", pron: "じどうしゃ / Jidōsha", hv: "Tự động xa" }, cn: { word: "汽车", pron: "qìchē", hv: "Khí xa" } },
+                    { vi: "Tàu điện", en: "Train", jp: { word: "電車", pron: "でんしゃ / Densha", hv: "Điện xa" }, cn: { word: "火车", pron: "huǒchē", hv: "Hỏa xa" } },
+                    { vi: "Xe buýt", en: "Bus", jp: { word: "バス", pron: "Basu", hv: "Không có" }, cn: { word: "公交车", pron: "gōngjiāochē", hv: "Công giao xa" } }
+                ],
+                sentences: [
+                    { vi: "Tôi đi làm bằng xe máy.", en: "I go to work by motorbike.", jp: "私はバイクで通勤します。(Watashi wa baiku de tsūkin shimasu.)", cn: "我骑摩托车去上班。(Wǒ qí mótuōchē qù shàngbān.)" },
+                    { vi: "Tàu điện đã khởi hành chưa?", en: "Has the train departed?", jp: "電車はもう出発しましたか？(Densha wa mō shuppatsu shimashita ka?)", cn: "火车已经出发了吗？(Huǒchē yǐjīng chūfā le ma?)" }
+                ]
+            },
+            {
+                id: "dulich",
+                icon: "fa-plane-departure",
+                title: "Du lịch",
+                vocab: [
+                    { vi: "Khách sạn", en: "Hotel", jp: { word: "旅館", pron: "りょかん / Ryokan", hv: "Lữ quán" }, cn: { word: "酒店", pron: "jiǔdiàn", hv: "Tửu điếm" } },
+                    { vi: "Hộ chiếu", en: "Passport", jp: { word: "旅券", pron: "りょけん / Ryoken", hv: "Lữ khoán" }, cn: { word: "护照", pron: "hùzhào", hv: "Hộ chiếu" } },
+                    { vi: "Hành lý", en: "Luggage", jp: { word: "荷物", pron: "にもつ / Nimotsu", hv: "Hà vật" }, cn: { word: "行李", pron: "xínglǐ", hv: "Hành lý" } },
+                    { vi: "Vé máy bay", en: "Flight ticket", jp: { word: "航空券", pron: "こうくうけん / Kōkūken", hv: "Hàng không khoán" }, cn: { word: "机票", pron: "jīpiào", hv: "Cơ phiếu" } }
+                ],
+                sentences: [
+                    { vi: "Tôi muốn đặt một phòng đơn.", en: "I would like to book a single room.", jp: "シングルルームを予約したいです。(Shinguru rūmu o yoyaku shitai desu.)", cn: "我想订一间单人房。(Wǒ xiǎng dìng yī jiān dānrén fáng.)" },
+                    { vi: "Vui lòng cho tôi xem hộ chiếu.", en: "Please show me your passport.", jp: "パスポートを見せてください。(Pasupōto o misete kudasai.)", cn: "请出示您的护照。(Qǐng chūshì nín de hùzhào.)" }
+                ]
+            },
+            {
+                id: "thucpham",
+                icon: "fa-utensils",
+                title: "Thực phẩm (Ăn uống)",
+                vocab: [
+                    { vi: "Nước", en: "Water", jp: { word: "水", pron: "みず / Mizu", hv: "Thủy" }, cn: { word: "水", pron: "shuǐ", hv: "Thủy" } },
+                    { vi: "Thịt bò", en: "Beef", jp: { word: "牛肉", pron: "ぎゅうにく / Gyūniku", hv: "Ngưu nhục" }, cn: { word: "牛肉", pron: "niúròu", hv: "Ngưu nhục" } },
+                    { vi: "Trái táo", en: "Apple", jp: { word: "林檎", pron: "りんご / Ringo", hv: "Lâm cầm" }, cn: { word: "苹果", pron: "píngguǒ", hv: "Bình quả" } },
+                    { vi: "Cơm", en: "Rice", jp: { word: "ご飯", pron: "ごはん / Gohan", hv: "Phạn" }, cn: { word: "米饭", pron: "mǐfàn", hv: "Mễ phạn" } }
+                ],
+                sentences: [
+                    { vi: "Cho tôi một ly nước lạnh.", en: "Give me a glass of cold water.", jp: "冷たいお水を一杯ください。(Tsumetai omizu o ippai kudasai.)", cn: "给我一杯冷水。(Gěi wǒ yī bēi lěngshuǐ.)" },
+                    { vi: "Thịt bò này rất ngon.", en: "This beef is very delicious.", jp: "この牛肉はとても美味しいです。(Kono gyūniku wa totemo oishii desu.)", cn: "这个牛肉很好吃。(Zhège niúròu hěn hǎochī.)" }
+                ]
+            },
+            {
+                id: "tinhtu",
+                icon: "fa-star",
+                title: "Tính từ thường dùng",
+                vocab: [
+                    { vi: "Lớn / To", en: "Big", jp: { word: "大きい", pron: "おおきい / Ōkii", hv: "Đại" }, cn: { word: "大", pron: "dà", hv: "Đại" } },
+                    { vi: "Nhỏ / Bé", en: "Small", jp: { word: "小さい", pron: "ちいさい / Chiisai", hv: "Tiểu" }, cn: { word: "小", pron: "xiǎo", hv: "Tiểu" } },
+                    { vi: "Đẹp", en: "Beautiful", jp: { word: "美しい", pron: "うつくしい / Utsukushii", hv: "Mỹ" }, cn: { word: "漂亮", pron: "piàoliang", hv: "Phiêu lượng" } },
+                    { vi: "Tốt", en: "Good", jp: { word: "良い", pron: "いい / Ii", hv: "Lương" }, cn: { word: "好", pron: "hǎo", hv: "Hảo" } }
+                ],
+                sentences: [
+                    { vi: "Ngôi nhà kia rất lớn.", en: "That house is very big.", jp: "あの家はとても大きいです。(Ano ie wa totemo ōkii desu.)", cn: "那栋房子很大。(Nà dòng fángzi hěn dà.)" },
+                    { vi: "Thời tiết hôm nay thật đẹp.", en: "The weather is beautiful today.", jp: "今日の天気は本当に美しいです。(Kyō no tenki wa hontō ni utsukushii desu.)", cn: "今天的天气真好。(Jīntiān de tiānqì zhēn hǎo.)" }
+                ]
+            },
+            {
+                id: "dongtu",
+                icon: "fa-person-running",
+                title: "Động từ thường dùng",
+                vocab: [
+                    { vi: "Đi", en: "Go", jp: { word: "行く", pron: "いく / Iku", hv: "Hành" }, cn: { word: "去", pron: "qù", hv: "Khứ" } },
+                    { vi: "Ăn", en: "Eat", jp: { word: "食べる", pron: "たべる / Taberu", hv: "Thực" }, cn: { word: "吃", pron: "chī", hv: "Cật" } },
+                    { vi: "Ngủ", en: "Sleep", jp: { word: "寝る", pron: "ねる / Neru", hv: "Tẩm" }, cn: { word: "睡觉", pron: "shuìjiào", hv: "Thụy giác" } },
+                    { vi: "Làm việc", en: "Work", jp: { word: "働く", pron: "はたらく / Hataraku", hv: "Động" }, cn: { word: "工作", pron: "gōngzuò", hv: "Công tác" } }
+                ],
+                sentences: [
+                    { vi: "Tôi đang đi làm.", en: "I am going to work.", jp: "私は仕事に行きます。(Watashi wa shigoto ni ikimasu.)", cn: "我去上班。(Wǒ qù shàngbān.)" },
+                    { vi: "Hôm qua tôi đã ngủ rất ngon.", en: "I slept very well yesterday.", jp: "昨日、私はよく寝ました。(Kinō, watashi wa yoku nemashita.)", cn: "昨天我睡得很好。(Zuótiān wǒ shuì de hěn hǎo.)" }
+                ]
+            }
+        ];
+
+        // Khởi tạo
+        const topicListEl = document.getElementById('topic-list');
+        const welcomeArea = document.getElementById('welcome-area');
+        const contentArea = document.getElementById('content-area');
+        const titleEl = document.getElementById('topic-title');
+        const vocabTableBody = document.getElementById('vocab-table-body');
+        const sentencesList = document.getElementById('sentences-list');
+        let currentActiveBtn = null;
+
+        // Render Sidebar
+        database.forEach(topic => {
+            const btn = document.createElement('button');
+            btn.className = 'w-full text-left px-4 py-3 mb-1 rounded-lg hover:bg-blue-50 text-slate-700 transition-colors flex items-center gap-3 border border-transparent';
+            btn.innerHTML = `<i class="fas ${topic.icon} w-5 text-center text-slate-400"></i> <span class="font-medium">${topic.title}</span>`;
+            
+            btn.onclick = () => {
+                if (currentActiveBtn) {
+                    currentActiveBtn.classList.remove('bg-blue-50', 'border-blue-100', 'text-blue-700');
+                    currentActiveBtn.querySelector('i').classList.replace('text-blue-500', 'text-slate-400');
+                }
+                btn.classList.add('bg-blue-50', 'border-blue-100', 'text-blue-700');
+                btn.querySelector('i').classList.replace('text-slate-400', 'text-blue-500');
+                currentActiveBtn = btn;
+                renderTopic(topic);
+            };
+            topicListEl.appendChild(btn);
+        });
+
+        // Hàm render nội dung bài học
+        function renderTopic(topic) {
+            welcomeArea.classList.add('hidden');
+            contentArea.classList.remove('hidden');
+            titleEl.innerText = topic.title;
+
+            // Render Từ vựng
+            vocabTableBody.innerHTML = '';
+            topic.vocab.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition-colors';
+                
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-800">${item.vi}</td>
+                    <td class="p-4 text-slate-600">${item.en}</td>
+                    <td class="p-4">
+                        <div class="text-lg font-medium text-slate-800">${item.jp.word}</div>
+                        <div class="text-sm text-slate-500">🎧 ${item.jp.pron}</div>
+                        <div class="text-xs font-semibold text-rose-600 mt-1">HV: ${item.jp.hv}</div>
+                    </td>
+                    <td class="p-4">
+                        <div class="text-lg font-medium text-slate-800">${item.cn.word}</div>
+                        <div class="text-sm text-slate-500">🎧 ${item.cn.pron}</div>
+                        <div class="text-xs font-semibold text-rose-600 mt-1">HV: ${item.cn.hv}</div>
+                    </td>
+                `;
+                vocabTableBody.appendChild(tr);
+            });
+
+            // Render Câu ví dụ
+            sentencesList.innerHTML = '';
+            topic.sentences.forEach(sentence => {
+                const div = document.createElement('div');
+                div.className = 'bg-white p-5 rounded-xl shadow-sm border border-slate-200';
+                div.innerHTML = `
+                    <div class="font-bold text-slate-800 mb-2 pb-2 border-b border-slate-100">🇻🇳 ${sentence.vi}</div>
+                    <div class="text-slate-600 mb-1">🇬🇧 ${sentence.en}</div>
+                    <div class="text-slate-700 font-medium mb-1">🇯🇵 ${sentence.jp}</div>
+                    <div class="text-slate-700 font-medium">🇨🇳 ${sentence.cn}</div>
+                `;
+                sentencesList.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
