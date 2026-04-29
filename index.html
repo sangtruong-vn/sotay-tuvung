@@ -21,11 +21,19 @@
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen flex overflow-hidden">
 
+    <!-- Sidebar Overlay cho Mobile -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/50 z-20 hidden md:hidden transition-opacity"></div>
+
     <!-- Sidebar -->
-    <aside class="w-64 bg-white shadow-xl flex flex-col z-10 h-full">
-        <div class="p-5 border-b border-slate-100 flex items-center gap-3">
-            <i class="fas fa-globe-asia text-blue-600 text-2xl"></i>
-            <h1 class="font-bold text-lg text-slate-800">Sổ Tay Từ Vựng</h1>
+    <aside id="sidebar" class="fixed md:relative w-64 bg-white shadow-xl flex flex-col z-30 h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-globe-asia text-blue-600 text-2xl"></i>
+                <h1 class="font-bold text-lg text-slate-800">Từ Vựng</h1>
+            </div>
+            <button id="close-sidebar-btn" class="md:hidden text-slate-400 hover:text-slate-700 text-xl px-2">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
         <div class="flex-1 overflow-y-auto custom-scrollbar p-3" id="sidebar-menu">
             <button id="btn-flashcard" class="w-full text-left px-4 py-3 mb-4 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-700 hover:bg-indigo-100 transition-colors flex items-center gap-3">
@@ -53,8 +61,8 @@
                     
                     <!-- Vocabulary Table -->
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-8">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
+                        <div class="overflow-x-auto custom-scrollbar pb-2">
+                            <table class="w-full text-left border-collapse min-w-[800px]">
                                 <thead>
                                     <tr class="bg-slate-100 text-slate-600 text-sm uppercase tracking-wider">
                                         <th class="p-4 font-semibold border-b w-1/5">Tiếng Việt</th>
@@ -445,6 +453,195 @@
                     { vi: "Tôi đang đi làm.", en: "I am going to work.", jp: "私は仕事に行きます。(Watashi wa shigoto ni ikimasu.)", cn: "我去上班。(Wǒ qù shàngbān.)" },
                     { vi: "Hôm qua tôi đã ngủ rất ngon.", en: "I slept very well yesterday.", jp: "昨日、私はよく寝ました。(Kinō, watashi wa yoku nemashita.)", cn: "昨天我睡得很好。(Zuótiān wǒ shuì de hěn hǎo.)" }
                 ]
+            },
+            {
+                id: "trangphuc",
+                icon: "fa-tshirt",
+                title: "Trang Phục",
+                vocab: [
+                    { vi: "Áo sơ mi", en: "Shirt", jp: { word: "シャツ", pron: "Shatsu", hv: "Từ ngoại lai" }, cn: { word: "衬衫", pron: "chènshān", hv: "Xứng sam" } },
+                    { vi: "Quần dài", en: "Pants", jp: { word: "ズボン", pron: "Zubon", hv: "Từ ngoại lai" }, cn: { word: "裤子", pron: "kùzi", hv: "Khố tử" } },
+                    { vi: "Váy", en: "Skirt", jp: { word: "スカート", pron: "Sukāto", hv: "Từ ngoại lai" }, cn: { word: "裙子", pron: "qúnzi", hv: "Quần tử" } },
+                    { vi: "Giày", en: "Shoes", jp: { word: "靴", pron: "くつ / Kutsu", hv: "Ngoa" }, cn: { word: "鞋子", pron: "xiézi", hv: "Hài tử" } },
+                    { vi: "Mũ / Nón", en: "Hat", jp: { word: "帽子", pron: "ぼうし / Bōshi", hv: "Mạo tử" }, cn: { word: "帽子", pron: "màozi", hv: "Mạo tử" } },
+                    { vi: "Áo khoác", en: "Jacket", jp: { word: "上着", pron: "うわぎ / Uwagi", hv: "Thượng trước" }, cn: { word: "外套", pron: "wàitào", hv: "Ngoại sáo" } },
+                    { vi: "Tất (vớ)", en: "Socks", jp: { word: "靴下", pron: "くつした / Kutsushita", hv: "Ngoa hạ" }, cn: { word: "袜子", pron: "wàzi", hv: "Mạt tử" } },
+                    { vi: "Cà vạt", en: "Tie", jp: { word: "ネクタイ", pron: "Nekutai", hv: "Từ ngoại lai" }, cn: { word: "领带", pron: "lǐngdài", hv: "Lĩnh đái" } },
+                    { vi: "Kính mắt", en: "Glasses", jp: { word: "眼鏡", pron: "めがね / Megane", hv: "Nhãn kính" }, cn: { word: "眼镜", pron: "yǎnjìng", hv: "Nhãn kính" } },
+                    { vi: "Đồng hồ đeo tay", en: "Watch", jp: { word: "腕時計", pron: "うでどけい / Udedokei", hv: "Oản thời kế" }, cn: { word: "手表", pron: "shǒubiǎo", hv: "Thủ biểu" } }
+                ],
+                sentences: [
+                    { vi: "Chiếc áo này bao nhiêu tiền?", en: "How much is this shirt?", jp: "このシャツはいくらですか。(Kono shatsu wa ikura desu ka.)", cn: "这件衬衫多少钱？(Zhè jiàn chènshān duōshǎo qián?)" },
+                    { vi: "Bạn mặc cỡ (size) nào?", en: "What size do you wear?", jp: "サイズは何ですか。(Saizu wa nan desu ka.)", cn: "你穿多大码的？(Nǐ chuān duōdà mǎ de?)" }
+                ]
+            },
+            {
+                id: "amnhac",
+                icon: "fa-music",
+                title: "Âm nhạc, Nhạc cụ",
+                vocab: [
+                    { vi: "Âm nhạc", en: "Music", jp: { word: "音楽", pron: "おんがく / Ongaku", hv: "Âm nhạc" }, cn: { word: "音乐", pron: "yīnyuè", hv: "Âm nhạc" } },
+                    { vi: "Bài hát", en: "Song", jp: { word: "歌", pron: "うた / Uta", hv: "Ca" }, cn: { word: "歌曲", pron: "gēqǔ", hv: "Ca khúc" } },
+                    { vi: "Ca sĩ", en: "Singer", jp: { word: "歌手", pron: "かしゅ / Kashu", hv: "Ca thủ" }, cn: { word: "歌手", pron: "gēshǒu", hv: "Ca thủ" } },
+                    { vi: "Đàn piano", en: "Piano", jp: { word: "ピアノ", pron: "Piano", hv: "Từ ngoại lai" }, cn: { word: "钢琴", pron: "gāngqín", hv: "Cương cầm" } },
+                    { vi: "Đàn guitar", en: "Guitar", jp: { word: "ギター", pron: "Gitā", hv: "Từ ngoại lai" }, cn: { word: "吉他", pron: "jítā", hv: "Cát tha" } },
+                    { vi: "Trống", en: "Drum", jp: { word: "ドラム", pron: "Doramu", hv: "Từ ngoại lai" }, cn: { word: "鼓", pron: "gǔ", hv: "Cổ" } },
+                    { vi: "Buổi hòa nhạc", en: "Concert", jp: { word: "コンサート", pron: "Konsāto", hv: "Từ ngoại lai" }, cn: { word: "演唱会", pron: "yǎnchànghuì", hv: "Diễn xướng hội" } },
+                    { vi: "Giai điệu", en: "Melody", jp: { word: "メロディー", pron: "Merodī", hv: "Từ ngoại lai" }, cn: { word: "旋律", pron: "xuánlǜ", hv: "Toàn luật" } },
+                    { vi: "Lời bài hát", en: "Lyrics", jp: { word: "歌詞", pron: "かし / Kashi", hv: "Ca từ" }, cn: { word: "歌词", pron: "gēcí", hv: "Ca từ" } },
+                    { vi: "Tai nghe", en: "Earphones", jp: { word: "イヤホン", pron: "Iyahon", hv: "Từ ngoại lai" }, cn: { word: "耳机", pron: "ěrjī", hv: "Nhĩ cơ" } }
+                ],
+                sentences: [
+                    { vi: "Tôi rất thích nghe nhạc pop.", en: "I really like listening to pop music.", jp: "ポップ音楽を聴くのが大好きです。(Poppu ongaku o kiku no ga daisuki desu.)", cn: "我很喜欢听流行音乐。(Wǒ hěn xǐhuān tīng liúxíng yīnyuè.)" },
+                    { vi: "Bạn có biết chơi đàn guitar không?", en: "Can you play the guitar?", jp: "ギターを弾くことができますか。(Gitā o hiku koto ga dekimasu ka.)", cn: "你会弹吉他吗？(Nǐ huì tán jítā ma?)" }
+                ]
+            },
+            {
+                id: "thethao",
+                icon: "fa-futbol",
+                title: "Thể thao",
+                vocab: [
+                    { vi: "Thể thao", en: "Sports", jp: { word: "スポーツ", pron: "Supōtsu", hv: "Từ ngoại lai" }, cn: { word: "运动", pron: "yùndòng", hv: "Vận động" } },
+                    { vi: "Bóng đá", en: "Football", jp: { word: "サッカー", pron: "Sakkā", hv: "Từ ngoại lai" }, cn: { word: "足球", pron: "zúqiú", hv: "Túc cầu" } },
+                    { vi: "Bóng rổ", en: "Basketball", jp: { word: "バスケットボール", pron: "Basukettobōru", hv: "Từ ngoại lai" }, cn: { word: "篮球", pron: "lánqiú", hv: "Lam cầu" } },
+                    { vi: "Bơi lội", en: "Swimming", jp: { word: "水泳", pron: "すいえい / Suiei", hv: "Thủy vịnh" }, cn: { word: "游泳", pron: "yóuyǒng", hv: "Du vịnh" } },
+                    { vi: "Quần vợt", en: "Tennis", jp: { word: "テニス", pron: "Tenisu", hv: "Từ ngoại lai" }, cn: { word: "网球", pron: "wǎngqiú", hv: "Võng cầu" } },
+                    { vi: "Cầu lông", en: "Badminton", jp: { word: "バドミントン", pron: "Badominton", hv: "Từ ngoại lai" }, cn: { word: "羽毛球", pron: "yǔmáoqiú", hv: "Vũ mao cầu" } },
+                    { vi: "Bóng bàn", en: "Table tennis", jp: { word: "卓球", pron: "たっきゅう / Takkyū", hv: "Trác cầu" }, cn: { word: "乒乓球", pron: "pīngpāngqiú", hv: "Binh bang cầu" } },
+                    { vi: "Điền kinh", en: "Athletics", jp: { word: "陸上", pron: "りくじょう / Rikujō", hv: "Lục thượng" }, cn: { word: "田径", pron: "tiánjìng", hv: "Điền kính" } },
+                    { vi: "Võ thuật", en: "Martial arts", jp: { word: "武道", pron: "ぶどう / Budō", hv: "Võ đạo" }, cn: { word: "武术", pron: "wǔshù", hv: "Võ thuật" } },
+                    { vi: "Đạp xe", en: "Cycling", jp: { word: "サイクリング", pron: "Saikuringu", hv: "Từ ngoại lai" }, cn: { word: "骑自行车", pron: "qí zìxíngchē", hv: "Kỵ tự hành xa" } }
+                ],
+                sentences: [
+                    { vi: "Môn thể thao yêu thích của bạn là gì?", en: "What is your favorite sport?", jp: "好きなスポーツは何ですか。(Sukina supōtsu wa nan desu ka.)", cn: "你最喜欢的运动是什么？(Nǐ zuì xǐhuān de yùndòng shì shénme?)" },
+                    { vi: "Tôi chơi bóng đá mỗi cuối tuần.", en: "I play football every weekend.", jp: "私は毎週末サッカーをします。(Watashi wa maishūmatsu sakkā o shimasu.)", cn: "我每个周末都踢足球。(Wǒ měi gè zhōumò dōu tī zúqiú.)" }
+                ]
+            },
+            {
+                id: "hoccu",
+                icon: "fa-pencil-ruler",
+                title: "Học cụ",
+                vocab: [
+                    { vi: "Bút bi", en: "Pen", jp: { word: "ボールペン", pron: "Bōrupen", hv: "Từ ngoại lai" }, cn: { word: "圆珠笔", pron: "yuánzhūbǐ", hv: "Viên châu bút" } },
+                    { vi: "Bút chì", en: "Pencil", jp: { word: "鉛筆", pron: "えんぴつ / Enpitsu", hv: "Duyên bút" }, cn: { word: "铅笔", pron: "qiānbǐ", hv: "Duyên bút" } },
+                    { vi: "Tẩy (Gôm)", en: "Eraser", jp: { word: "消しゴム", pron: "けしゴム / Keshigomu", hv: "Tiêu + Cao su" }, cn: { word: "橡皮", pron: "xiàngpí", hv: "Tượng bì" } },
+                    { vi: "Thước kẻ", en: "Ruler", jp: { word: "定規", pron: "じょうぎ / Jōgi", hv: "Định quy" }, cn: { word: "尺子", pron: "chǐzi", hv: "Xích tử" } },
+                    { vi: "Quyển vở", en: "Notebook", jp: { word: "ノート", pron: "Nōto", hv: "Từ ngoại lai" }, cn: { word: "笔记本", pron: "bǐjìběn", hv: "Bút ký bản" } },
+                    { vi: "Sách giáo khoa", en: "Textbook", jp: { word: "教科書", pron: "きょうかしょ / Kyōkasho", hv: "Giáo khoa thư" }, cn: { word: "教科书", pron: "jiàokēshū", hv: "Giáo khoa thư" } },
+                    { vi: "Cặp sách", en: "School bag", jp: { word: "鞄", pron: "かばん / Kaban", hv: "Bao" }, cn: { word: "书包", pron: "shūbāo", hv: "Thư bao" } },
+                    { vi: "Hộp bút", en: "Pencil case", jp: { word: "筆箱", pron: "ふでばこ / Fudebako", hv: "Bút tương" }, cn: { word: "铅笔盒", pron: "qiānbǐ hé", hv: "Duyên bút hạp" } },
+                    { vi: "Từ điển", en: "Dictionary", jp: { word: "辞書", pron: "じしょ / Jisho", hv: "Từ thư" }, cn: { word: "词典", pron: "cídiǎn", hv: "Từ điển" } },
+                    { vi: "Bảng đen", en: "Blackboard", jp: { word: "黒板", pron: "こくばん / Kokuban", hv: "Hắc bản" }, cn: { word: "黑板", pron: "hēibǎn", hv: "Hắc bản" } }
+                ],
+                sentences: [
+                    { vi: "Cho tôi mượn cục tẩy được không?", en: "Can I borrow your eraser?", jp: "消しゴムを貸してくれませんか。(Keshigomu o kashite kuremasen ka.)", cn: "能借我用一下橡皮吗？(Néng jiè wǒ yòng yīxià xiàngpí ma?)" },
+                    { vi: "Quyển từ điển này rất hữu ích.", en: "This dictionary is very useful.", jp: "この辞書はとても役に立ちます。(Kono jisho wa totemo yaku ni tachimasu.)", cn: "这本词典很有用。(Zhè běn cídiǎn hěn yǒuyòng.)" }
+                ]
+            },
+            {
+                id: "diadiem",
+                icon: "fa-map-marked-alt",
+                title: "Địa điểm vui chơi",
+                vocab: [
+                    { vi: "Công viên", en: "Park", jp: { word: "公園", pron: "こうえん / Kōen", hv: "Công viên" }, cn: { word: "公园", pron: "gōngyuán", hv: "Công viên" } },
+                    { vi: "Rạp chiếu phim", en: "Cinema", jp: { word: "映画館", pron: "えいがかん / Eigakan", hv: "Ánh họa quán" }, cn: { word: "电影院", pron: "diànyǐngyuàn", hv: "Điện ảnh viện" } },
+                    { vi: "Sở thú", en: "Zoo", jp: { word: "動物園", pron: "どうぶつえん / Dōbutsuen", hv: "Động vật viên" }, cn: { word: "动物园", pron: "dòngwùyuán", hv: "Động vật viên" } },
+                    { vi: "Thủy cung", en: "Aquarium", jp: { word: "水族館", pron: "すいぞくかん / Suizokukan", hv: "Thủy tộc quán" }, cn: { word: "水族馆", pron: "shuǐzúguǎn", hv: "Thủy tộc quán" } },
+                    { vi: "Bảo tàng", en: "Museum", jp: { word: "博物館", pron: "はくぶつかん / Hakubutsukan", hv: "Bác vật quán" }, cn: { word: "博物馆", pron: "bówùguǎn", hv: "Bác vật quán" } },
+                    { vi: "Quán cà phê", en: "Café", jp: { word: "カフェ", pron: "Kafe", hv: "Từ ngoại lai" }, cn: { word: "咖啡馆", pron: "kāfēiguǎn", hv: "Ca phê quán" } },
+                    { vi: "Bãi biển", en: "Beach", jp: { word: "海辺 / ビーチ", pron: "うみべ / Umibe", hv: "Hải biên" }, cn: { word: "海滩", pron: "hǎitān", hv: "Hải than" } },
+                    { vi: "Công viên giải trí", en: "Amusement park", jp: { word: "遊園地", pron: "ゆうえんち / Yūenchi", hv: "Du viên địa" }, cn: { word: "游乐园", pron: "yóulèyuán", hv: "Du lạc viên" } },
+                    { vi: "Suối nước nóng", en: "Hot spring", jp: { word: "温泉", pron: "おんせん / Onsen", hv: "Ôn tuyền" }, cn: { word: "温泉", pron: "wēnquán", hv: "Ôn tuyền" } },
+                    { vi: "Lâu đài", en: "Castle", jp: { word: "城", pron: "しろ / Shiro", hv: "Thành" }, cn: { word: "城堡", pron: "chéngbǎo", hv: "Thành bảo" } }
+                ],
+                sentences: [
+                    { vi: "Cuối tuần này chúng ta đi rạp chiếu phim nhé?", en: "Shall we go to the cinema this weekend?", jp: "今週末、映画館に行きませんか。(Konshūmatsu, eigakan ni ikimasen ka.)", cn: "这个周末我们去电影院好吗？(Zhège zhōumò wǒmen qù diànyǐngyuàn hǎo ma?)" },
+                    { vi: "Nước ở suối nước nóng này rất thoải mái.", en: "The water in this hot spring is very relaxing.", jp: "この温泉のお湯はとても気持ちいいです。(Kono onsen no oyu wa totemo kimochi ii desu.)", cn: "这里的温泉水很舒服。(Zhèlǐ de wēnquán shuǐ hěn shūfú.)" }
+                ]
+            },
+            {
+                id: "dongvat",
+                icon: "fa-paw",
+                title: "Động vật",
+                vocab: [
+                    { vi: "Con chó", en: "Dog", jp: { word: "犬", pron: "いぬ / Inu", hv: "Khuyển" }, cn: { word: "狗", pron: "gǒu", hv: "Cẩu" } },
+                    { vi: "Con mèo", en: "Cat", jp: { word: "猫", pron: "ねこ / Neko", hv: "Miêu" }, cn: { word: "猫", pron: "māo", hv: "Miêu" } },
+                    { vi: "Con chim", en: "Bird", jp: { word: "鳥", pron: "とり / Tori", hv: "Điểu" }, cn: { word: "鸟", pron: "niǎo", hv: "Điểu" } },
+                    { vi: "Con cá", en: "Fish", jp: { word: "魚", pron: "さかな / Sakana", hv: "Ngư" }, cn: { word: "鱼", pron: "yú", hv: "Ngư" } },
+                    { vi: "Con lợn (heo)", en: "Pig", jp: { word: "豚", pron: "ぶた / Buta", hv: "Đồn" }, cn: { word: "猪", pron: "zhū", hv: "Trư" } },
+                    { vi: "Con bò", en: "Cow", jp: { word: "牛", pron: "うし / Ushi", hv: "Ngưu" }, cn: { word: "牛", pron: "niú", hv: "Ngưu" } },
+                    { vi: "Con khỉ", en: "Monkey", jp: { word: "猿", pron: "さる / Saru", hv: "Viên" }, cn: { word: "猴子", pron: "hóuzi", hv: "Hầu tử" } },
+                    { vi: "Con voi", en: "Elephant", jp: { word: "象", pron: "ぞう / Zō", hv: "Tượng" }, cn: { word: "大象", pron: "dàxiàng", hv: "Đại tượng" } },
+                    { vi: "Con hổ", en: "Tiger", jp: { word: "虎", pron: "とら / Tora", hv: "Hổ" }, cn: { word: "老虎", pron: "lǎohǔ", hv: "Lão hổ" } },
+                    { vi: "Con gấu", en: "Bear", jp: { word: "熊", pron: "くま / Kuma", hv: "Hùng" }, cn: { word: "熊", pron: "xióng", hv: "Hùng" } }
+                ],
+                sentences: [
+                    { vi: "Nhà tôi có nuôi một con mèo nhỏ.", en: "My family has a small cat.", jp: "私の家では小さな猫を飼っています。(Watashi no ie dewa chiisana neko o katteimasu.)", cn: "我家养了一只小猫。(Wǒ jiā yǎng le yī zhī xiǎo māo.)" },
+                    { vi: "Voi là loài động vật rất thông minh.", en: "Elephants are very intelligent animals.", jp: "象はとても賢い動物です。(Zō wa totemo kashikoi dōbutsu desu.)", cn: "大象是非常聪明的动物。(Dàxiàng shì fēicháng cōngmíng de dòngwù.)" }
+                ]
+            },
+            {
+                id: "thucvat",
+                icon: "fa-leaf",
+                title: "Thực vật",
+                vocab: [
+                    { vi: "Cái cây", en: "Tree", jp: { word: "木", pron: "き / Ki", hv: "Mộc" }, cn: { word: "树", pron: "shù", hv: "Thụ" } },
+                    { vi: "Bông hoa", en: "Flower", jp: { word: "花", pron: "はな / Hana", hv: "Hoa" }, cn: { word: "花", pron: "huā", hv: "Hoa" } },
+                    { vi: "Chiếc lá", en: "Leaf", jp: { word: "葉", pron: "は / Ha", hv: "Diệp" }, cn: { word: "叶子", pron: "yèzi", hv: "Diệp tử" } },
+                    { vi: "Cỏ", en: "Grass", jp: { word: "草", pron: "くさ / Kusa", hv: "Thảo" }, cn: { word: "草", pron: "cǎo", hv: "Thảo" } },
+                    { vi: "Rừng", en: "Forest", jp: { word: "森", pron: "もり / Mori", hv: "Sâm" }, cn: { word: "森林", pron: "sēnlín", hv: "Sâm lâm" } },
+                    { vi: "Hoa hồng", en: "Rose", jp: { word: "バラ", pron: "Bara", hv: "Mân côi" }, cn: { word: "玫瑰", pron: "méiguī", hv: "Mân côi" } },
+                    { vi: "Cây thông", en: "Pine tree", jp: { word: "松", pron: "まつ / Matsu", hv: "Tùng" }, cn: { word: "松树", pron: "sōngshù", hv: "Tùng thụ" } },
+                    { vi: "Trái cây / Quả", en: "Fruit", jp: { word: "果物", pron: "くだもの / Kudamono", hv: "Quả vật" }, cn: { word: "水果", pron: "shuǐguǒ", hv: "Thủy quả" } },
+                    { vi: "Hạt giống", en: "Seed", jp: { word: "種", pron: "たね / Tane", hv: "Chủng" }, cn: { word: "种子", pron: "zhǒngzi", hv: "Chủng tử" } },
+                    { vi: "Cây nấm", en: "Mushroom", jp: { word: "キノコ", pron: "Kinoko", hv: "Khuẩn" }, cn: { word: "蘑菇", pron: "mógu", hv: "Ma cô" } }
+                ],
+                sentences: [
+                    { vi: "Vào mùa xuân, hoa anh đào nở rất đẹp.", en: "In spring, cherry blossoms bloom beautifully.", jp: "春には桜の花がとても綺麗に咲きます。(Haru niwa sakura no hana ga totemo kirei ni sakimasu.)", cn: "春天的时候，樱花开得很漂亮。(Chūntiān de shíhòu, yīnghuā kāi de hěn piàoliang.)" },
+                    { vi: "Xin đừng dẫm lên bãi cỏ.", en: "Please do not step on the grass.", jp: "芝生に入らないでください。(Shibafu ni hairanaide kudasai.)", cn: "请勿踩踏草坪。(Qǐng wù cǎità cǎopíng.)" }
+                ]
+            },
+            {
+                id: "sodem",
+                icon: "fa-list-ol",
+                title: "Số đếm & Lượng từ",
+                vocab: [
+                    { vi: "1 cái / chiếc", en: "1 piece/thing", jp: { word: "一個", pron: "いっこ / Ikko", hv: "Nhất cá" }, cn: { word: "一个", pron: "yī gè", hv: "Nhất cá" } },
+                    { vi: "2 người", en: "2 people", jp: { word: "二人", pron: "ふたり / Futari", hv: "Nhị nhân" }, cn: { word: "两个人", pron: "liǎng gè rén", hv: "Lưỡng cá nhân" } },
+                    { vi: "3 con (vật)", en: "3 animals", jp: { word: "三匹", pron: "さんびき / Sanbiki", hv: "Tam thất" }, cn: { word: "三只", pron: "sān zhī", hv: "Tam chỉ" } },
+                    { vi: "4 tờ/tấm (giấy)", en: "4 sheets", jp: { word: "四枚", pron: "よんまい / Yonmai", hv: "Tứ mai" }, cn: { word: "四张", pron: "sì zhāng", hv: "Tứ trương" } },
+                    { vi: "5 quyển (sách)", en: "5 books", jp: { word: "五冊", pron: "ごさつ / Gosatsu", hv: "Ngũ sách" }, cn: { word: "五本", pron: "wǔ běn", hv: "Ngũ bản" } },
+                    { vi: "6 chiếc (xe)", en: "6 vehicles", jp: { word: "六台", pron: "ろくだい / Rokudai", hv: "Lục đài" }, cn: { word: "六辆", pron: "liù liàng", hv: "Lục lượng" } },
+                    { vi: "7 lần", en: "7 times", jp: { word: "七回", pron: "ななかい / Nanakai", hv: "Thất hồi" }, cn: { word: "七次", pron: "qī cì", hv: "Thất thứ" } },
+                    { vi: "8 ly / cốc", en: "8 glasses", jp: { word: "八杯", pron: "はっぱい / Happai", hv: "Bát bôi" }, cn: { word: "八杯", pron: "bā bēi", hv: "Bát bôi" } },
+                    { vi: "9 giờ", en: "9 o'clock", jp: { word: "九時", pron: "くじ / Kuji", hv: "Cửu thời" }, cn: { word: "九点", pron: "jiǔ diǎn", hv: "Cửu điểm" } },
+                    { vi: "10 phút", en: "10 minutes", jp: { word: "十分", pron: "じっぷん / Jippun", hv: "Thập phân" }, cn: { word: "十分钟", pron: "shí fēnzhōng", hv: "Thập phân chung" } }
+                ],
+                sentences: [
+                    { vi: "Cho tôi 3 cái này.", en: "Give me three of these.", jp: "これを三個ください。(Kore o sanko kudasai.)", cn: "给我三个这个。(Gěi wǒ sān gè zhège.)" },
+                    { vi: "Có 5 người đang ở trong phòng.", en: "There are 5 people in the room.", jp: "部屋に五人います。(Heya ni gonin imasu.)", cn: "房间里有五个人。(Fángjiān lǐ yǒu wǔ gè rén.)" }
+                ]
+            },
+            {
+                id: "cauhoi",
+                icon: "fa-question-circle",
+                title: "Câu hỏi thông dụng",
+                vocab: [
+                    { vi: "Cái gì?", en: "What?", jp: { word: "何", pron: "なに / Nani", hv: "Hà" }, cn: { word: "什么", pron: "shénme", hv: "Thập ma" } },
+                    { vi: "Ở đâu?", en: "Where?", jp: { word: "どこ", pron: "Doko", hv: "Không có" }, cn: { word: "哪里", pron: "nǎlǐ", hv: "Na lý" } },
+                    { vi: "Khi nào?", en: "When?", jp: { word: "いつ", pron: "Itsu", hv: "Không có" }, cn: { word: "什么时候", pron: "shénme shíhòu", hv: "Thập ma thời hậu" } },
+                    { vi: "Ai?", en: "Who?", jp: { word: "誰", pron: "だれ / Dare", hv: "Thùy" }, cn: { word: "谁", pron: "shéi", hv: "Thùy" } },
+                    { vi: "Tại sao?", en: "Why?", jp: { word: "なぜ / どうして", pron: "Naze / Dōshite", hv: "Không có" }, cn: { word: "为什么", pron: "wèishénme", hv: "Vi thập ma" } },
+                    { vi: "Như thế nào?", en: "How?", jp: { word: "どのように", pron: "Dono yō ni", hv: "Không có" }, cn: { word: "怎么", pron: "zěnme", hv: "Chẩm ma" } },
+                    { vi: "Bao nhiêu tiền?", en: "How much?", jp: { word: "いくら", pron: "Ikura", hv: "Không có" }, cn: { word: "多少钱", pron: "duōshǎo qián", hv: "Đa thiếu tiền" } },
+                    { vi: "Bao nhiêu tuổi?", en: "How old?", jp: { word: "何歳", pron: "なんさい / Nansai", hv: "Hà tuế" }, cn: { word: "多大 / 几岁", pron: "duōdà / jǐ suì", hv: "Đa đại / Kỷ tuế" } },
+                    { vi: "Cái nào?", en: "Which one?", jp: { word: "どれ", pron: "Dore", hv: "Không có" }, cn: { word: "哪个", pron: "nǎge", hv: "Na cá" } },
+                    { vi: "Mấy giờ?", en: "What time?", jp: { word: "何時", pron: "なんじ / Nanji", hv: "Hà thời" }, cn: { word: "几点", pron: "jǐ diǎn", hv: "Kỷ điểm" } }
+                ],
+                sentences: [
+                    { vi: "Xin lỗi, nhà vệ sinh ở đâu? - Nó ở bên phải.", en: "Excuse me, where is the restroom? - It's on the right.", jp: "すみません、トイレはどこですか？- 右にあります。(Sumimasen, toire wa doko desu ka? - Migi ni arimasu.)", cn: "请问，洗手间在哪里？- 在右边。(Qǐngwèn, xǐshǒujiān zài nǎlǐ? - Zài yòubiān.)" },
+                    { vi: "Bạn tên là gì? - Tôi tên là Nam.", en: "What is your name? - My name is Nam.", jp: "お名前は何ですか？- 私はナムです。(Onamae wa nan desu ka? - Watashi wa Namu desu.)", cn: "你叫什么名字？- 我叫南。(Nǐ jiào shénme míngzì? - Wǒ jiào Nán.)" }
+                ]
             }
         ];
 
@@ -458,6 +655,26 @@
         const vocabTableBody = document.getElementById('vocab-table-body');
         const sentencesList = document.getElementById('sentences-list');
         let currentActiveBtn = null;
+
+        // Xử lý Mobile Sidebar
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+
+        function toggleSidebar(show) {
+            if (show) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebarOverlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                sidebarOverlay.classList.add('hidden');
+            }
+        }
+
+        mobileMenuBtn.onclick = () => toggleSidebar(true);
+        closeSidebarBtn.onclick = () => toggleSidebar(false);
+        sidebarOverlay.onclick = () => toggleSidebar(false);
 
         // Xử lý dữ liệu Flashcard
         let allVocab = [];
@@ -485,6 +702,9 @@
                 
                 flashcardArea.classList.add('hidden');
                 renderTopic(topic);
+
+                // Tự động đóng menu trên điện thoại khi chọn xong
+                if(window.innerWidth < 768) toggleSidebar(false);
             };
             topicListEl.appendChild(btn);
         });
@@ -504,6 +724,9 @@
             
             currentFcIndex = 0;
             renderFlashcard();
+
+            // Tự động đóng menu trên điện thoại khi chọn xong
+            if(window.innerWidth < 768) toggleSidebar(false);
         };
 
         // Hàm Render một thẻ Flashcard
