@@ -55,6 +55,38 @@
                 <!-- Render topics here -->
             </div>
         </div>
+
+        <!-- Cài đặt giọng đọc -->
+        <div class="border-t border-slate-100 shrink-0">
+            <button id="voice-toggle" class="w-full px-5 py-3 flex items-center justify-between text-slate-600 hover:bg-slate-50 transition">
+                <span class="flex items-center gap-3 text-sm font-medium"><i class="fas fa-sliders w-5 text-center text-slate-400"></i>Giọng đọc</span>
+                <i id="voice-chevron" class="fas fa-chevron-up text-xs text-slate-400 transition-transform"></i>
+            </button>
+            <div id="voice-panel" class="hidden px-5 pb-4 max-h-72 overflow-y-auto custom-scrollbar">
+                <p id="voice-warning" class="hidden text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mb-3"></p>
+
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">English</label>
+                <div class="flex gap-2 mb-3">
+                    <select id="voice-en" class="flex-1 min-w-0 text-sm border border-slate-200 rounded-lg px-2 py-1.5 bg-white"></select>
+                    <button class="speak-btn shrink-0" data-speak="This is a test sentence." data-lang="en-US" title="Nghe thử"><i class="fas fa-volume-high"></i></button>
+                </div>
+
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tiếng Nhật</label>
+                <div class="flex gap-2 mb-3">
+                    <select id="voice-ja" class="flex-1 min-w-0 text-sm border border-slate-200 rounded-lg px-2 py-1.5 bg-white"></select>
+                    <button class="speak-btn shrink-0" data-speak="これはテストの文章です。" data-lang="ja-JP" title="Nghe thử"><i class="fas fa-volume-high"></i></button>
+                </div>
+
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tiếng Trung</label>
+                <div class="flex gap-2 mb-3">
+                    <select id="voice-zh" class="flex-1 min-w-0 text-sm border border-slate-200 rounded-lg px-2 py-1.5 bg-white"></select>
+                    <button class="speak-btn shrink-0" data-speak="这是一个测试句子。" data-lang="zh-CN" title="Nghe thử"><i class="fas fa-volume-high"></i></button>
+                </div>
+
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tốc độ đọc: <span id="voice-rate-label">0.9</span>x</label>
+                <input id="voice-rate" type="range" min="0.5" max="1.3" step="0.05" value="0.9" class="w-full accent-indigo-600">
+            </div>
+        </div>
     </aside>
 
     <!-- Main Content -->
@@ -1279,15 +1311,104 @@
         // ===== PHÁT ÂM (Web Speech API) =====
         const synth = window.speechSynthesis;
         let voices = [];
-        function loadVoices() { voices = synth ? synth.getVoices() : []; }
-        if (synth) { loadVoices(); synth.onvoiceschanged = loadVoices; }
+
+        const LANGS = { en: 'en-US', ja: 'ja-JP', zh: 'zh-CN' };
+        const VOICE_KEY = 'sotay-tuvung:voice';
+        let voicePrefs = { en: '', ja: '', zh: '', rate: 0.9 };
+        try { Object.assign(voicePrefs, JSON.parse(localStorage.getItem(VOICE_KEY) || '{}')); } catch (e) {}
+        function saveVoicePrefs() {
+            try { localStorage.setItem(VOICE_KEY, JSON.stringify(voicePrefs)); } catch (e) {}
+        }
+
+        const voiceSelects = {
+            en: document.getElementById('voice-en'),
+            ja: document.getElementById('voice-ja'),
+            zh: document.getElementById('voice-zh')
+        };
+        const voiceWarningEl = document.getElementById('voice-warning');
+        const voiceRateEl = document.getElementById('voice-rate');
+        const voiceRateLabel = document.getElementById('voice-rate-label');
+
+        const voiceLang = v => (v.lang || '').replace('_', '-').toLowerCase();
+
+        // Chấm điểm để ưu tiên giọng tự nhiên, tránh giọng nén nghe rè
+        function voiceScore(v, lang) {
+            const n = (v.name || '').toLowerCase();
+            let sc = 0;
+            if (!v.localService) sc += 50;                                  // giọng mạng (Google...) thường tự nhiên nhất
+            if (/google|natural|neural|premium|enhanced|siri/.test(n)) sc += 40;
+            if (/compact|eloquence|espeak|novelty/.test(n)) sc -= 60;       // giọng nén, nghe "nghẹt mũi"
+            if (voiceLang(v) === lang.toLowerCase()) sc += 10;
+            if (v.default) sc += 5;
+            return sc;
+        }
+
+        function voicesFor(lang) {
+            const base = lang.split('-')[0].toLowerCase();
+            return voices.filter(v => voiceLang(v).startsWith(base))
+                         .sort((a, b) => voiceScore(b, lang) - voiceScore(a, lang));
+        }
 
         function pickVoice(lang) {
-            const base = lang.split('-')[0].toLowerCase();
-            const norm = v => (v.lang || '').replace('_', '-').toLowerCase();
-            return voices.find(v => norm(v) === lang.toLowerCase())
-                || voices.find(v => norm(v).startsWith(base));
+            const list = voicesFor(lang);
+            const saved = voicePrefs[lang.split('-')[0].toLowerCase()];
+            return (saved && list.find(v => v.voiceURI === saved)) || list[0] || null;
         }
+
+        function populateVoiceSelects() {
+            const missing = [];
+            Object.keys(LANGS).forEach(base => {
+                const sel = voiceSelects[base];
+                if (!sel) return;
+                const list = voicesFor(LANGS[base]);
+                if (!list.length) missing.push(base);
+                sel.disabled = !list.length;
+                sel.innerHTML = list.length
+                    ? list.map(v => `<option value="${escAttr(v.voiceURI)}">${escAttr(v.name)}${v.localService ? '' : ' ☁'}</option>`).join('')
+                    : '<option value="">(máy chưa có giọng)</option>';
+                const cur = pickVoice(LANGS[base]);
+                if (cur) sel.value = cur.voiceURI;
+            });
+
+            const names = { en: 'Anh', ja: 'Nhật', zh: 'Trung' };
+            if (missing.length) {
+                voiceWarningEl.innerHTML = `Máy chưa có giọng tiếng <b>${missing.map(m => names[m]).join(', ')}</b>. `
+                    + 'Trên macOS: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices để tải thêm.';
+                voiceWarningEl.classList.remove('hidden');
+            } else {
+                voiceWarningEl.classList.add('hidden');
+            }
+        }
+
+        function loadVoices() {
+            voices = synth ? synth.getVoices() : [];
+            populateVoiceSelects();
+        }
+        if (synth) { loadVoices(); synth.onvoiceschanged = loadVoices; }
+
+        Object.keys(LANGS).forEach(base => {
+            const sel = voiceSelects[base];
+            if (!sel) return;
+            sel.onchange = () => {
+                voicePrefs[base] = sel.value;
+                saveVoicePrefs();
+                const sample = { en: 'This is a test sentence.', ja: 'これはテストの文章です。', zh: '这是一个测试句子。' };
+                speak(sample[base], LANGS[base], null);
+            };
+        });
+
+        voiceRateEl.value = voicePrefs.rate;
+        voiceRateLabel.innerText = Number(voicePrefs.rate).toFixed(2);
+        voiceRateEl.oninput = () => {
+            voicePrefs.rate = parseFloat(voiceRateEl.value);
+            voiceRateLabel.innerText = voicePrefs.rate.toFixed(2);
+            saveVoicePrefs();
+        };
+
+        document.getElementById('voice-toggle').onclick = () => {
+            document.getElementById('voice-panel').classList.toggle('hidden');
+            document.getElementById('voice-chevron').classList.toggle('rotate-180');
+        };
 
         let currentSpeakBtn = null;
         function speak(text, lang, btn) {
@@ -1296,7 +1417,7 @@
             if (currentSpeakBtn) currentSpeakBtn.classList.remove('speaking');
             const u = new SpeechSynthesisUtterance(text);
             u.lang = lang;
-            u.rate = 0.85;
+            u.rate = voicePrefs.rate;
             const v = pickVoice(lang);
             if (v) u.voice = v;
             currentSpeakBtn = btn || null;
