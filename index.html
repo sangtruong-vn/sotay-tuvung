@@ -28,6 +28,11 @@
         .speak-btn:hover { color: #4f46e5; background: #e0e7ff; }
         .speak-btn.speaking { color: #fff; background: #4f46e5; }
         .speak-btn-lg { width: 2.25rem; height: 2.25rem; font-size: .95rem; }
+
+        /* Ẩn/hiện từng ngôn ngữ */
+        body.hide-en .lang-en,
+        body.hide-ja .lang-ja,
+        body.hide-zh .lang-zh { display: none !important; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen flex overflow-hidden">
@@ -47,12 +52,41 @@
             </button>
         </div>
         <div class="flex-1 overflow-y-auto custom-scrollbar p-3" id="sidebar-menu">
-            <button id="btn-flashcard" class="w-full text-left px-4 py-3 mb-4 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-700 hover:bg-indigo-100 transition-colors flex items-center gap-3">
+            <div class="relative mb-4">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                <input id="search-input" type="text" placeholder="Tìm từ, câu, kanji..." autocomplete="off"
+                       class="w-full pl-9 pr-8 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                <button id="search-clear" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 px-1"><i class="fas fa-times"></i></button>
+            </div>
+            <button id="btn-flashcard" class="w-full text-left px-4 py-3 mb-2 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-700 hover:bg-indigo-100 transition-colors flex items-center gap-3">
                 <i class="fas fa-layer-group w-5 text-center text-indigo-500"></i> <span class="font-bold">Ôn tập Flashcard</span>
+            </button>
+            <button id="btn-quiz" class="w-full text-left px-4 py-3 mb-4 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 hover:bg-amber-100 transition-colors flex items-center gap-3">
+                <i class="fas fa-circle-question w-5 text-center text-amber-500"></i> <span class="font-bold">Kiểm tra</span>
             </button>
             <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">Các chủ đề</div>
             <div id="topic-list">
                 <!-- Render topics here -->
+            </div>
+        </div>
+
+        <!-- Hiển thị ngôn ngữ -->
+        <div class="border-t border-slate-100 shrink-0">
+            <button id="lang-toggle" class="w-full px-5 py-3 flex items-center justify-between text-slate-600 hover:bg-slate-50 transition">
+                <span class="flex items-center gap-3 text-sm font-medium"><i class="fas fa-eye w-5 text-center text-slate-400"></i>Hiển thị ngôn ngữ</span>
+                <i id="lang-chevron" class="fas fa-chevron-up text-xs text-slate-400 transition-transform"></i>
+            </button>
+            <div id="lang-panel" class="hidden px-5 pb-4 space-y-2">
+                <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+                    <input type="checkbox" id="show-en" class="w-4 h-4 accent-blue-600" checked> 🇬🇧 English
+                </label>
+                <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+                    <input type="checkbox" id="show-ja" class="w-4 h-4 accent-blue-600" checked> 🇯🇵 Tiếng Nhật
+                </label>
+                <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+                    <input type="checkbox" id="show-zh" class="w-4 h-4 accent-blue-600" checked> 🇨🇳 Tiếng Trung
+                </label>
+                <p class="text-xs text-slate-400 pt-1">Luôn giữ ít nhất một ngôn ngữ.</p>
             </div>
         </div>
 
@@ -106,6 +140,9 @@
                         <button id="btn-topic-flashcard" class="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium shadow-sm hover:bg-indigo-700 transition flex items-center gap-2">
                             <i class="fas fa-layer-group"></i> Học flashcard chủ đề này
                         </button>
+                        <button id="btn-topic-quiz" class="px-5 py-2.5 rounded-lg bg-amber-500 text-white font-medium shadow-sm hover:bg-amber-600 transition flex items-center gap-2">
+                            <i class="fas fa-circle-question"></i> Kiểm tra chủ đề này
+                        </button>
                         <span id="topic-progress" class="text-sm text-slate-500"></span>
                     </div>
                     
@@ -116,9 +153,9 @@
                                 <thead>
                                     <tr class="bg-slate-100 text-slate-600 text-sm uppercase tracking-wider">
                                         <th class="p-4 font-semibold border-b w-1/5">Tiếng Việt</th>
-                                        <th class="p-4 font-semibold border-b w-1/5">English</th>
-                                        <th class="p-4 font-semibold border-b w-1/4">Tiếng Nhật</th>
-                                        <th class="p-4 font-semibold border-b w-1/4">Tiếng Trung</th>
+                                        <th class="p-4 font-semibold border-b w-1/5 lang-en">English</th>
+                                        <th class="p-4 font-semibold border-b w-1/4 lang-ja">Tiếng Nhật</th>
+                                        <th class="p-4 font-semibold border-b w-1/4 lang-zh">Tiếng Trung</th>
                                     </tr>
                                 </thead>
                                 <tbody id="vocab-table-body" class="divide-y divide-slate-100">
@@ -173,14 +210,14 @@
                             <!-- Mặt sau: Ngoại ngữ -->
                             <div class="absolute w-full h-full backface-hidden bg-indigo-50 border-2 border-indigo-100 rounded-2xl flex flex-col justify-center items-center p-8 rotate-y-180">
                                 <div class="w-full grid grid-cols-1 gap-4 divide-y divide-indigo-200/50 text-left">
-                                    <div class="pb-2">
+                                    <div class="pb-2 lang-en">
                                         <span class="text-xs font-bold text-indigo-500 uppercase">English</span>
                                         <div class="flex items-center gap-3">
                                             <div class="text-2xl font-bold text-slate-800" id="fc-en">Word</div>
                                             <span id="fc-en-speak"></span>
                                         </div>
                                     </div>
-                                    <div class="py-2">
+                                    <div class="py-2 lang-ja">
                                         <span class="text-xs font-bold text-rose-500 uppercase">Tiếng Nhật</span>
                                         <div class="flex items-center gap-3">
                                             <div class="text-2xl font-bold text-slate-800" id="fc-jp-word">Word</div>
@@ -188,7 +225,7 @@
                                         </div>
                                         <div class="text-sm text-slate-600" id="fc-jp-pron">pron</div>
                                     </div>
-                                    <div class="pt-2">
+                                    <div class="pt-2 lang-zh">
                                         <span class="text-xs font-bold text-amber-600 uppercase">Tiếng Trung</span>
                                         <div class="flex items-center gap-3">
                                             <div class="text-2xl font-bold text-slate-800" id="fc-cn-word">Word</div>
@@ -211,6 +248,104 @@
                         <button id="fc-learned-btn" class="px-6 py-3 rounded-full border-2 font-medium transition">Đánh dấu đã thuộc</button>
                     </div>
                     <div class="mt-5 text-slate-500 font-medium bg-white px-4 py-1 rounded-full shadow-sm" id="fc-progress">1 / 100</div>
+                </div>
+
+                <!-- Kết quả tìm kiếm -->
+                <div id="search-area" class="hidden">
+                    <h2 class="text-3xl font-bold mb-2 text-slate-800 border-l-4 border-blue-500 pl-4">Kết quả tìm kiếm</h2>
+                    <p id="search-summary" class="text-slate-500 mb-6 pl-4"></p>
+
+                    <div id="search-vocab-wrap" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+                        <div class="overflow-x-auto custom-scrollbar pb-2">
+                            <table class="w-full text-left border-collapse min-w-[800px]">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-600 text-sm uppercase tracking-wider">
+                                        <th class="p-4 font-semibold border-b">Tiếng Việt</th>
+                                        <th class="p-4 font-semibold border-b lang-en">English</th>
+                                        <th class="p-4 font-semibold border-b lang-ja">Tiếng Nhật</th>
+                                        <th class="p-4 font-semibold border-b lang-zh">Tiếng Trung</th>
+                                        <th class="p-4 font-semibold border-b">Chủ đề</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="search-vocab-body" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <h3 id="search-sentences-heading" class="hidden text-xl font-bold mb-4 text-slate-800"><i class="fas fa-comments text-blue-500 mr-2"></i>Câu chứa từ khóa</h3>
+                    <div id="search-sentences" class="grid gap-4"></div>
+
+                    <div id="search-empty" class="hidden text-center text-slate-500 py-16">
+                        <i class="fas fa-magnifying-glass text-5xl text-slate-300 mb-4"></i>
+                        <p class="font-bold text-slate-600 mb-1">Không tìm thấy kết quả nào</p>
+                        <p class="text-sm">Thử từ khóa ngắn hơn, hoặc gõ bằng tiếng Việt / English / kanji / pinyin.</p>
+                    </div>
+                </div>
+
+                <!-- Kiểm tra (Quiz) -->
+                <div id="quiz-area" class="hidden">
+                    <h2 class="text-3xl font-bold mb-6 text-slate-800 border-l-4 border-amber-500 pl-4">Kiểm tra: <span id="quiz-deck-name">Tổng hợp</span></h2>
+
+                    <!-- Màn hình thiết lập -->
+                    <div id="quiz-setup" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-w-xl">
+                        <label class="block text-sm font-bold text-slate-600 mb-2">Kiểm tra ngôn ngữ</label>
+                        <select id="quiz-lang" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 mb-5 bg-white">
+                            <option value="mix">Ngẫu nhiên cả 3</option>
+                            <option value="en">English</option>
+                            <option value="jp">Tiếng Nhật</option>
+                            <option value="cn">Tiếng Trung</option>
+                        </select>
+
+                        <label class="block text-sm font-bold text-slate-600 mb-2">Số câu hỏi</label>
+                        <select id="quiz-count" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 mb-6 bg-white">
+                            <option value="10">10 câu</option>
+                            <option value="20">20 câu</option>
+                            <option value="0">Toàn bộ</option>
+                        </select>
+
+                        <p id="quiz-pool-info" class="text-sm text-slate-500 mb-5"></p>
+                        <button id="quiz-start" class="px-6 py-3 rounded-lg bg-amber-500 text-white font-bold shadow-sm hover:bg-amber-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fas fa-play mr-2"></i>Bắt đầu
+                        </button>
+                    </div>
+
+                    <!-- Màn hình làm bài -->
+                    <div id="quiz-play" class="hidden max-w-xl">
+                        <div class="flex items-center justify-between mb-2 text-sm font-medium text-slate-500">
+                            <span id="quiz-progress">Câu 1 / 10</span>
+                            <span>Đúng: <span id="quiz-score" class="font-bold text-emerald-600">0</span></span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-200 rounded-full mb-6 overflow-hidden">
+                            <div id="quiz-bar" class="h-full bg-amber-500 transition-all duration-300" style="width:0%"></div>
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-5 text-center">
+                            <p id="quiz-prompt" class="text-sm text-slate-500 mb-2">Từ này trong tiếng Nhật là gì?</p>
+                            <p id="quiz-question" class="text-3xl font-bold text-slate-800">Cái bàn</p>
+                        </div>
+
+                        <div id="quiz-options" class="grid gap-3"></div>
+                        <button id="quiz-quit" class="mt-6 text-sm text-slate-400 hover:text-rose-600 transition"><i class="fas fa-xmark mr-1"></i>Dừng bài kiểm tra</button>
+                    </div>
+
+                    <!-- Màn hình kết quả -->
+                    <div id="quiz-result" class="hidden max-w-2xl">
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center mb-6">
+                            <i id="quiz-result-icon" class="fas fa-trophy text-5xl text-amber-400 mb-4"></i>
+                            <p class="text-slate-500 mb-1">Kết quả</p>
+                            <p class="text-4xl font-bold text-slate-800 mb-2"><span id="quiz-final-score">0</span> / <span id="quiz-final-total">0</span></p>
+                            <p id="quiz-comment" class="text-slate-500"></p>
+                            <div class="flex flex-wrap items-center justify-center gap-3 mt-6">
+                                <button id="quiz-retry" class="px-5 py-2.5 rounded-lg bg-amber-500 text-white font-medium hover:bg-amber-600 transition"><i class="fas fa-rotate-right mr-2"></i>Làm lại</button>
+                                <button id="quiz-back" class="px-5 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition">Quay lại</button>
+                            </div>
+                        </div>
+
+                        <div id="quiz-wrong-wrap" class="hidden">
+                            <h3 class="text-xl font-bold mb-4 text-slate-800"><i class="fas fa-triangle-exclamation text-rose-500 mr-2"></i>Câu đã sai — ôn lại nhé</h3>
+                            <div id="quiz-wrong-list" class="grid gap-3"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="welcome-area" class="h-full flex flex-col items-center justify-center text-center text-slate-500 py-20">
@@ -1299,6 +1434,45 @@
         const welcomeArea = document.getElementById('welcome-area');
         const contentArea = document.getElementById('content-area');
         const flashcardArea = document.getElementById('flashcard-area');
+        const searchArea = document.getElementById('search-area');
+        const quizArea = document.getElementById('quiz-area');
+
+        const AREAS = { welcome: welcomeArea, content: contentArea, flashcard: flashcardArea, search: searchArea, quiz: quizArea };
+        function showArea(name) {
+            Object.keys(AREAS).forEach(k => AREAS[k].classList.toggle('hidden', k !== name));
+        }
+
+        const shuffle = arr => arr.sort(() => Math.random() - 0.5);
+
+        // ===== HIỂN THỊ NGÔN NGỮ =====
+        const LANG_KEY = 'sotay-tuvung:langs';
+        let langPrefs = { en: true, ja: true, zh: true };
+        try { Object.assign(langPrefs, JSON.parse(localStorage.getItem(LANG_KEY) || '{}')); } catch (e) {}
+        const langChecks = {
+            en: document.getElementById('show-en'),
+            ja: document.getElementById('show-ja'),
+            zh: document.getElementById('show-zh')
+        };
+        function applyLangPrefs() {
+            Object.keys(langChecks).forEach(k => {
+                document.body.classList.toggle('hide-' + k, !langPrefs[k]);
+                langChecks[k].checked = langPrefs[k];
+            });
+            try { localStorage.setItem(LANG_KEY, JSON.stringify(langPrefs)); } catch (e) {}
+        }
+        Object.keys(langChecks).forEach(k => {
+            langChecks[k].onchange = () => {
+                const next = Object.assign({}, langPrefs, { [k]: langChecks[k].checked });
+                if (!next.en && !next.ja && !next.zh) { langChecks[k].checked = true; return; } // giữ ít nhất 1
+                langPrefs = next;
+                applyLangPrefs();
+            };
+        });
+        applyLangPrefs();
+        document.getElementById('lang-toggle').onclick = () => {
+            document.getElementById('lang-panel').classList.toggle('hidden');
+            document.getElementById('lang-chevron').classList.toggle('rotate-180');
+        };
         const btnFlashcard = document.getElementById('btn-flashcard');
         const titleEl = document.getElementById('topic-title');
         const vocabTableBody = document.getElementById('vocab-table-body');
@@ -1512,29 +1686,34 @@
         const fcBackBtn = document.getElementById('fc-back');
 
         // Render Sidebar
+        const topicButtons = {};   // id chủ đề -> nút, để đồng bộ highlight khi mở từ kết quả tìm kiếm
         database.forEach(topic => {
             const btn = document.createElement('button');
             btn.className = 'w-full text-left px-4 py-3 mb-1 rounded-lg hover:bg-blue-50 text-slate-700 transition-colors flex items-center gap-3 border border-transparent';
             btn.innerHTML = `<i class="fas ${topic.icon} w-5 text-center text-slate-400"></i> <span class="font-medium">${topic.title}</span>`;
-            
-            btn.onclick = () => {
-                if (currentActiveBtn) {
-                    currentActiveBtn.classList.remove('bg-blue-50', 'border-blue-100', 'text-blue-700');
-                    currentActiveBtn.querySelector('i').classList.replace('text-blue-500', 'text-slate-400');
-                }
-                btn.classList.add('bg-blue-50', 'border-blue-100', 'text-blue-700');
-                btn.querySelector('i').classList.replace('text-slate-400', 'text-blue-500');
-                currentActiveBtn = btn;
-                btnFlashcard.classList.remove('bg-indigo-100', 'border-indigo-300'); // Tắt active của flashcard
-                
-                flashcardArea.classList.add('hidden');
-                renderTopic(topic);
 
+            btn.onclick = () => {
+                renderTopic(topic);
                 // Tự động đóng menu trên điện thoại khi chọn xong
                 if(window.innerWidth < 768) toggleSidebar(false);
             };
+            topicButtons[topic.id] = btn;
             topicListEl.appendChild(btn);
         });
+
+        // Đánh dấu chủ đề đang mở trên sidebar
+        function setActiveTopicBtn(topic) {
+            if (currentActiveBtn) {
+                currentActiveBtn.classList.remove('bg-blue-50', 'border-blue-100', 'text-blue-700');
+                currentActiveBtn.querySelector('i').classList.replace('text-blue-500', 'text-slate-400');
+            }
+            currentActiveBtn = topic ? topicButtons[topic.id] : null;
+            if (currentActiveBtn) {
+                currentActiveBtn.classList.add('bg-blue-50', 'border-blue-100', 'text-blue-700');
+                currentActiveBtn.querySelector('i').classList.replace('text-slate-400', 'text-blue-500');
+            }
+            btnFlashcard.classList.remove('bg-indigo-100', 'border-indigo-300');
+        }
 
         // Xử lý sự kiện nút Flashcard Tổng hợp
         btnFlashcard.onclick = () => {
@@ -1558,8 +1737,7 @@
         };
 
         fcBackBtn.onclick = () => {
-            if (fcFromTopic) renderTopic(fcFromTopic);
-            flashcardArea.classList.add('hidden');
+            if (fcFromTopic) renderTopic(fcFromTopic); else showArea('welcome');
         };
 
         // Mở một bộ flashcard
@@ -1569,9 +1747,7 @@
             fcFromTopic = topic || null;
             currentFcIndex = 0;
 
-            welcomeArea.classList.add('hidden');
-            contentArea.classList.add('hidden');
-            flashcardArea.classList.remove('hidden');
+            showArea('flashcard');
             fcBackBtn.classList.toggle('hidden', !fcFromTopic);
 
             buildDeck();
@@ -1676,12 +1852,297 @@
             renderFlashcard();
         };
 
+        // ===== TÌM KIẾM =====
+        const searchInput = document.getElementById('search-input');
+        const searchClearBtn = document.getElementById('search-clear');
+
+        // Bỏ dấu để gõ "den" vẫn ra "Đèn", gõ "zhuozi" vẫn ra "zhuōzi"
+        function normText(t) {
+            return String(t).toLowerCase()
+                .replace(/đ/g, 'd')
+                .normalize('NFD').replace(/[̀-ͯ]/g, '');
+        }
+
+        const vocabIndex = [];
+        const lineIndex = [];
+        database.forEach(t => {
+            t.vocab.forEach(v => vocabIndex.push({
+                v, topic: t,
+                hay: normText([v.vi, v.en, v.jp.word, v.jp.pron, v.jp.hv, v.cn.word, v.cn.pron, v.cn.hv].join(' '))
+            }));
+            t.sentences.forEach(o => lineIndex.push({
+                o, topic: t, kind: 'Mẫu câu',
+                hay: normText([o.vi, o.en, o.jp, o.cn].join(' '))
+            }));
+            (t.dialogues || []).forEach(d => d.lines.forEach(l => lineIndex.push({
+                o: l, topic: t, kind: 'Hội thoại · ' + d.title,
+                hay: normText([l.vi, l.en, l.jp, l.cn].join(' '))
+            })));
+        });
+
+        const MAX_VOCAB_HITS = 60, MAX_LINE_HITS = 40;
+
+        function runSearch(raw) {
+            const q = normText(raw.trim());
+            searchClearBtn.classList.toggle('hidden', !raw);
+            if (!q) {
+                if (currentTopic) renderTopic(currentTopic); else showArea('welcome');
+                return;
+            }
+
+            const words = vocabIndex.filter(x => x.hay.includes(q));
+            const lines = lineIndex.filter(x => x.hay.includes(q));
+            showArea('search');
+
+            document.getElementById('search-summary').innerHTML =
+                `Từ khóa <b class="text-slate-700">${escAttr(raw.trim())}</b> &middot; `
+                + `${words.length} từ vựng, ${lines.length} câu`
+                + (words.length > MAX_VOCAB_HITS || lines.length > MAX_LINE_HITS ? ' (hiển thị một phần)' : '');
+
+            // Từ vựng
+            const tbody = document.getElementById('search-vocab-body');
+            tbody.innerHTML = '';
+            document.getElementById('search-vocab-wrap').classList.toggle('hidden', !words.length);
+            words.slice(0, MAX_VOCAB_HITS).forEach(({ v, topic }) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition-colors';
+                const mark = isLearned(v) ? '<i class="fas fa-circle-check text-emerald-500 mr-2" title="Đã thuộc"></i>' : '';
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-800">${mark}${v.vi}</td>
+                    ${vocabCells(v)}
+                    <td class="p-4">
+                        <button class="goto-topic text-sm text-blue-600 hover:underline text-left" data-topic="${topic.id}">${topic.title}</button>
+                    </td>`;
+                tbody.appendChild(tr);
+            });
+
+            // Câu & hội thoại
+            const sWrap = document.getElementById('search-sentences');
+            sWrap.innerHTML = '';
+            document.getElementById('search-sentences-heading').classList.toggle('hidden', !lines.length);
+            lines.slice(0, MAX_LINE_HITS).forEach(({ o, topic, kind }) => {
+                const div = document.createElement('div');
+                div.className = 'bg-white p-5 rounded-xl shadow-sm border border-slate-200';
+                div.innerHTML = `
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span class="text-xs font-bold uppercase tracking-wide text-slate-400">${kind}</span>
+                        <button class="goto-topic text-xs text-blue-600 hover:underline" data-topic="${topic.id}">${topic.title}</button>
+                    </div>
+                    <div class="font-bold text-slate-800 mb-2 pb-2 border-b border-slate-100">🇻🇳 ${o.vi}</div>
+                    ${langLines(o, '')}`;
+                sWrap.appendChild(div);
+            });
+
+            document.getElementById('search-empty').classList.toggle('hidden', !!(words.length || lines.length));
+        }
+
+        let searchTimer = null;
+        searchInput.oninput = () => {
+            clearTimeout(searchTimer);
+            const val = searchInput.value;
+            searchTimer = setTimeout(() => runSearch(val), 180);
+        };
+        searchClearBtn.onclick = () => { searchInput.value = ''; runSearch(''); searchInput.focus(); };
+
+        // Bấm tên chủ đề trong kết quả để mở chủ đề đó
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest && e.target.closest('.goto-topic');
+            if (!btn) return;
+            const topic = database.find(t => t.id === btn.dataset.topic);
+            if (!topic) return;
+            searchInput.value = '';
+            searchClearBtn.classList.add('hidden');
+            renderTopic(topic);
+        });
+
+        // ===== KIỂM TRA (QUIZ) =====
+        const QUIZ_LABELS = { en: 'English', jp: 'tiếng Nhật', cn: 'tiếng Trung' };
+        const QUIZ_OPT_BASE = 'quiz-option w-full text-left px-5 py-4 rounded-xl border-2 text-lg transition';
+        let quizDeck = [], quizQuestions = [], quizIndex = 0, quizScore = 0, quizWrong = [];
+        let quizFromTopic = null, quizAnswered = false;
+
+        const answerText = (v, lang) => lang === 'en' ? v.en : lang === 'jp' ? v.jp.word : v.cn.word;
+        const answerPron = (v, lang) => lang === 'en' ? '' : lang === 'jp' ? v.jp.pron : v.cn.pron;
+        const answerLangCode = lang => lang === 'en' ? 'en-US' : lang === 'jp' ? 'ja-JP' : 'zh-CN';
+
+        function quizShow(which) {
+            ['setup', 'play', 'result'].forEach(k =>
+                document.getElementById('quiz-' + k).classList.toggle('hidden', k !== which));
+        }
+
+        function openQuiz(list, name, topic) {
+            quizDeck = list;
+            quizFromTopic = topic || null;
+            document.getElementById('quiz-deck-name').innerText = name;
+            document.getElementById('quiz-pool-info').innerText =
+                list.length < 4 ? 'Bộ này cần ít nhất 4 từ mới kiểm tra được.' : `Bộ từ có ${list.length} từ.`;
+            document.getElementById('quiz-start').disabled = list.length < 4;
+            showArea('quiz');
+            quizShow('setup');
+        }
+
+        function buildOptions(v, lang) {
+            const correct = answerText(v, lang);
+            const pool = quizDeck.filter(x => x !== v && answerText(x, lang) !== correct);
+            const picks = shuffle(pool.slice()).slice(0, 3).map(x => answerText(x, lang));
+            return shuffle([correct, ...picks]);
+        }
+
+        document.getElementById('quiz-start').onclick = () => {
+            if (quizDeck.length < 4) return;
+            const langSel = document.getElementById('quiz-lang').value;
+            const pool = shuffle(quizDeck.slice());
+            let n = parseInt(document.getElementById('quiz-count').value, 10);
+            if (!n || n > pool.length) n = pool.length;
+
+            quizQuestions = pool.slice(0, n).map(v => {
+                const lang = langSel === 'mix' ? ['en', 'jp', 'cn'][Math.floor(Math.random() * 3)] : langSel;
+                return { v, lang, options: buildOptions(v, lang) };
+            });
+            quizIndex = 0; quizScore = 0; quizWrong = [];
+            quizShow('play');
+            renderQuestion();
+        };
+
+        function renderQuestion() {
+            quizAnswered = false;
+            const q = quizQuestions[quizIndex];
+            const total = quizQuestions.length;
+
+            document.getElementById('quiz-progress').innerText = `Câu ${quizIndex + 1} / ${total}`;
+            document.getElementById('quiz-score').innerText = quizScore;
+            document.getElementById('quiz-bar').style.width = `${(quizIndex / total) * 100}%`;
+            document.getElementById('quiz-prompt').innerText = `Từ này trong ${QUIZ_LABELS[q.lang]} là gì?`;
+            document.getElementById('quiz-question').innerText = q.v.vi;
+
+            const wrap = document.getElementById('quiz-options');
+            wrap.innerHTML = '';
+            q.options.forEach(opt => {
+                const b = document.createElement('button');
+                b.className = QUIZ_OPT_BASE + ' bg-white border-slate-200 text-slate-800 hover:border-amber-400 hover:bg-amber-50';
+                b.innerText = opt;
+                b.onclick = () => answerQuestion(b, opt);
+                wrap.appendChild(b);
+            });
+        }
+
+        function answerQuestion(btn, chosen) {
+            if (quizAnswered) return;
+            quizAnswered = true;
+            const q = quizQuestions[quizIndex];
+            const correct = answerText(q.v, q.lang);
+
+            document.querySelectorAll('.quiz-option').forEach(b => {
+                b.disabled = true;
+                b.className = b.innerText === correct
+                    ? QUIZ_OPT_BASE + ' bg-emerald-50 border-emerald-500 text-emerald-800 font-bold'
+                    : QUIZ_OPT_BASE + ' bg-white border-slate-200 text-slate-400';
+            });
+
+            if (chosen === correct) {
+                quizScore++;
+            } else {
+                btn.className = QUIZ_OPT_BASE + ' bg-rose-50 border-rose-500 text-rose-800';
+                quizWrong.push(q);
+            }
+            document.getElementById('quiz-score').innerText = quizScore;
+            speak(firstAlt(stripPron(correct)), answerLangCode(q.lang), null);
+
+            setTimeout(() => {
+                quizIndex++;
+                if (quizIndex >= quizQuestions.length) showQuizResult();
+                else renderQuestion();
+            }, 1200);
+        }
+
+        function showQuizResult() {
+            const total = quizQuestions.length;
+            const pct = total ? Math.round((quizScore / total) * 100) : 0;
+            document.getElementById('quiz-final-score').innerText = quizScore;
+            document.getElementById('quiz-final-total').innerText = total;
+            document.getElementById('quiz-comment').innerText =
+                pct >= 90 ? 'Xuất sắc! Bạn nắm rất chắc bộ từ này.'
+              : pct >= 70 ? 'Khá tốt! Ôn lại vài từ sai là ổn.'
+              : pct >= 50 ? 'Tạm được, luyện thêm bằng flashcard nhé.'
+              : 'Cần ôn lại bộ từ này kỹ hơn, đừng nản!';
+            document.getElementById('quiz-result-icon').className =
+                pct >= 70 ? 'fas fa-trophy text-5xl text-amber-400 mb-4' : 'fas fa-seedling text-5xl text-emerald-400 mb-4';
+
+            const wrap = document.getElementById('quiz-wrong-list');
+            wrap.innerHTML = '';
+            document.getElementById('quiz-wrong-wrap').classList.toggle('hidden', !quizWrong.length);
+            quizWrong.forEach(q => {
+                const ans = answerText(q.v, q.lang);
+                const pron = answerPron(q.v, q.lang);
+                const div = document.createElement('div');
+                div.className = 'bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between gap-4';
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold text-slate-800">${q.v.vi}</div>
+                        <div class="text-sm text-slate-500">${QUIZ_LABELS[q.lang]}</div>
+                    </div>
+                    <div class="flex items-center gap-3 text-right">
+                        <div>
+                            <div class="font-bold text-slate-800">${ans}</div>
+                            ${pron ? `<div class="text-xs text-slate-500">${pron}</div>` : ''}
+                        </div>
+                        ${speakBtn(firstAlt(ans), answerLangCode(q.lang))}
+                    </div>`;
+                wrap.appendChild(div);
+            });
+            quizShow('result');
+        }
+
+        document.getElementById('quiz-retry').onclick = () => quizShow('setup');
+        document.getElementById('quiz-quit').onclick = () => quizShow('setup');
+        document.getElementById('quiz-back').onclick = () => {
+            if (quizFromTopic) renderTopic(quizFromTopic); else showArea('welcome');
+        };
+        document.getElementById('btn-quiz').onclick = () => {
+            openQuiz(allVocab, 'Tổng hợp', null);
+            if (window.innerWidth < 768) toggleSidebar(false);
+        };
+        document.getElementById('btn-topic-quiz').onclick = () => {
+            if (currentTopic) openQuiz(currentTopic.vocab, currentTopic.title, currentTopic);
+        };
+
+        // Dựng 3 ô ngôn ngữ của một từ (dùng chung cho bài học và kết quả tìm kiếm)
+        function vocabCells(item) {
+            return `
+                    <td class="p-4 text-slate-600 lang-en">
+                        <div class="flex items-center gap-2">
+                            <span>${item.en}</span>${speakBtn(item.en, 'en-US')}
+                        </div>
+                    </td>
+                    <td class="p-4 lang-ja">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg font-medium text-slate-800">${item.jp.word}</span>${speakBtn(firstAlt(item.jp.word), 'ja-JP')}
+                        </div>
+                        <div class="text-sm text-slate-500">${item.jp.pron}</div>
+                        <div class="text-xs font-semibold text-rose-600 mt-1">HV: ${item.jp.hv}</div>
+                    </td>
+                    <td class="p-4 lang-zh">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg font-medium text-slate-800">${item.cn.word}</span>${speakBtn(firstAlt(item.cn.word), 'zh-CN')}
+                        </div>
+                        <div class="text-sm text-slate-500">${item.cn.pron}</div>
+                        <div class="text-xs font-semibold text-rose-600 mt-1">HV: ${item.cn.hv}</div>
+                    </td>`;
+        }
+
+        // Dựng 3 dòng ngôn ngữ của một câu / lượt thoại
+        function langLines(o, sizeCls) {
+            return `
+                    <div class="flex items-start gap-2 mb-1 lang-en"><span class="${sizeCls} text-slate-600">🇬🇧 ${o.en}</span>${speakBtn(o.en, 'en-US')}</div>
+                    <div class="flex items-start gap-2 mb-1 lang-ja"><span class="${sizeCls} text-slate-700 font-medium">🇯🇵 ${o.jp}</span>${speakBtn(stripPron(o.jp), 'ja-JP')}</div>
+                    <div class="flex items-start gap-2 lang-zh"><span class="${sizeCls} text-slate-700 font-medium">🇨🇳 ${o.cn}</span>${speakBtn(stripPron(o.cn), 'zh-CN')}</div>`;
+        }
+
         // Hàm render nội dung bài học
         function renderTopic(topic) {
             currentTopic = topic;
-            welcomeArea.classList.add('hidden');
-            flashcardArea.classList.add('hidden');
-            contentArea.classList.remove('hidden');
+            setActiveTopicBtn(topic);
+            showArea('content');
             titleEl.innerText = topic.title;
             updateTopicProgress();
 
@@ -1696,25 +2157,7 @@
 
                 tr.innerHTML = `
                     <td class="p-4 font-semibold text-slate-800">${mark}${item.vi}</td>
-                    <td class="p-4 text-slate-600">
-                        <div class="flex items-center gap-2">
-                            <span>${item.en}</span>${speakBtn(item.en, 'en-US')}
-                        </div>
-                    </td>
-                    <td class="p-4">
-                        <div class="flex items-center gap-2">
-                            <span class="text-lg font-medium text-slate-800">${item.jp.word}</span>${speakBtn(firstAlt(item.jp.word), 'ja-JP')}
-                        </div>
-                        <div class="text-sm text-slate-500">${item.jp.pron}</div>
-                        <div class="text-xs font-semibold text-rose-600 mt-1">HV: ${item.jp.hv}</div>
-                    </td>
-                    <td class="p-4">
-                        <div class="flex items-center gap-2">
-                            <span class="text-lg font-medium text-slate-800">${item.cn.word}</span>${speakBtn(firstAlt(item.cn.word), 'zh-CN')}
-                        </div>
-                        <div class="text-sm text-slate-500">${item.cn.pron}</div>
-                        <div class="text-xs font-semibold text-rose-600 mt-1">HV: ${item.cn.hv}</div>
-                    </td>
+                    ${vocabCells(item)}
                 `;
                 vocabTableBody.appendChild(tr);
             });
@@ -1726,9 +2169,7 @@
                 div.className = 'bg-white p-5 rounded-xl shadow-sm border border-slate-200';
                 div.innerHTML = `
                     <div class="font-bold text-slate-800 mb-2 pb-2 border-b border-slate-100">🇻🇳 ${sentence.vi}</div>
-                    <div class="flex items-start gap-2 mb-1"><span class="text-slate-600">🇬🇧 ${sentence.en}</span>${speakBtn(sentence.en, 'en-US')}</div>
-                    <div class="flex items-start gap-2 mb-1"><span class="text-slate-700 font-medium">🇯🇵 ${sentence.jp}</span>${speakBtn(stripPron(sentence.jp), 'ja-JP')}</div>
-                    <div class="flex items-start gap-2"><span class="text-slate-700 font-medium">🇨🇳 ${sentence.cn}</span>${speakBtn(stripPron(sentence.cn), 'zh-CN')}</div>
+                    ${langLines(sentence, '')}
                 `;
                 sentencesList.appendChild(div);
             });
@@ -1767,9 +2208,7 @@
                             <div class="max-w-full md:max-w-[85%] border ${bubble} rounded-2xl px-4 py-3">
                                 <div class="text-xs font-bold uppercase tracking-wide ${label} mb-1">${line.sp}</div>
                                 <div class="font-semibold text-slate-800 mb-2 pb-2 border-b border-slate-200/70">🇻🇳 ${line.vi}</div>
-                                <div class="flex items-start gap-2 mb-1"><span class="text-sm text-slate-600">🇬🇧 ${line.en}</span>${speakBtn(line.en, 'en-US')}</div>
-                                <div class="flex items-start gap-2 mb-1"><span class="text-sm text-slate-700 font-medium">🇯🇵 ${line.jp}</span>${speakBtn(stripPron(line.jp), 'ja-JP')}</div>
-                                <div class="flex items-start gap-2"><span class="text-sm text-slate-700 font-medium">🇨🇳 ${line.cn}</span>${speakBtn(stripPron(line.cn), 'zh-CN')}</div>
+                                ${langLines(line, 'text-sm')}
                             </div>
                         </div>`;
                 }).join('');
