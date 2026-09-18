@@ -17,6 +17,17 @@
         .transform-style-3d { transform-style: preserve-3d; }
         .backface-hidden { backface-visibility: hidden; }
         .rotate-y-180 { transform: rotateY(180deg); }
+
+        /* Nút phát âm */
+        .speak-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 1.75rem; height: 1.75rem; border-radius: 9999px;
+            color: #64748b; background: #f1f5f9; font-size: .75rem;
+            flex-shrink: 0; transition: all .15s; cursor: pointer;
+        }
+        .speak-btn:hover { color: #4f46e5; background: #e0e7ff; }
+        .speak-btn.speaking { color: #fff; background: #4f46e5; }
+        .speak-btn-lg { width: 2.25rem; height: 2.25rem; font-size: .95rem; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen flex overflow-hidden">
@@ -57,7 +68,14 @@
         <div class="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
             <div class="max-w-6xl mx-auto">
                 <div id="content-area" class="hidden">
-                    <h2 id="topic-title" class="text-3xl font-bold mb-6 text-slate-800 border-l-4 border-blue-500 pl-4">Tiêu đề</h2>
+                    <h2 id="topic-title" class="text-3xl font-bold mb-4 text-slate-800 border-l-4 border-blue-500 pl-4">Tiêu đề</h2>
+
+                    <div class="flex flex-wrap items-center gap-3 mb-6">
+                        <button id="btn-topic-flashcard" class="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium shadow-sm hover:bg-indigo-700 transition flex items-center gap-2">
+                            <i class="fas fa-layer-group"></i> Học flashcard chủ đề này
+                        </button>
+                        <span id="topic-progress" class="text-sm text-slate-500"></span>
+                    </div>
                     
                     <!-- Vocabulary Table -->
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-8">
@@ -83,16 +101,39 @@
                     <div id="sentences-list" class="grid gap-4">
                         <!-- Render sentences here -->
                     </div>
+
+                    <!-- Dialogues -->
+                    <h3 id="dialogues-heading" class="text-xl font-bold mt-10 mb-4 text-slate-800"><i class="fas fa-comment-dots text-emerald-500 mr-2"></i>Đoạn hội thoại ngắn thông dụng</h3>
+                    <div id="dialogues-list" class="grid gap-6">
+                        <!-- Render dialogues here -->
+                    </div>
                 </div>
 
                 <!-- Flashcard Area -->
                 <div id="flashcard-area" class="hidden h-full flex flex-col items-center pt-4 pb-10">
-                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Flashcard Tổng Hợp (<span id="fc-count">0</span> từ)</h2>
+                    <div class="w-full max-w-lg text-center mb-5">
+                        <button id="fc-back" class="hidden mb-3 text-sm text-slate-500 hover:text-blue-600 transition"><i class="fas fa-arrow-left mr-1"></i>Quay lại bài học</button>
+                        <h2 class="text-2xl font-bold text-slate-800">Flashcard: <span id="fc-deck-name">Tổng hợp</span></h2>
+                        <p class="text-slate-500 mt-1 text-sm"><span id="fc-count">0</span> từ trong bộ &middot; đã thuộc <span id="fc-learned-count" class="font-bold text-emerald-600">0</span></p>
+                        <div class="flex flex-wrap items-center justify-center gap-5 mt-3 text-sm">
+                            <label class="flex items-center gap-2 text-slate-600 cursor-pointer select-none">
+                                <input type="checkbox" id="fc-hide-learned" class="w-4 h-4 accent-indigo-600"> Chỉ học từ chưa thuộc
+                            </label>
+                            <button id="fc-reset" class="text-slate-400 hover:text-rose-600 transition"><i class="fas fa-rotate-left mr-1"></i>Xóa tiến độ</button>
+                        </div>
+                    </div>
+
+                    <div id="fc-empty" class="hidden w-full max-w-lg bg-white border-2 border-dashed border-emerald-200 rounded-2xl p-10 text-center mb-8">
+                        <i class="fas fa-circle-check text-5xl text-emerald-400 mb-4"></i>
+                        <p class="text-lg font-bold text-slate-700 mb-1">Bạn đã thuộc hết bộ này rồi!</p>
+                        <p class="text-slate-500 text-sm">Bỏ chọn "Chỉ học từ chưa thuộc" để ôn lại toàn bộ.</p>
+                    </div>
                     
                     <div id="flashcard-container" class="perspective-1000 w-full max-w-lg h-96 cursor-pointer mb-8">
                         <div id="flashcard-inner" class="relative w-full h-full text-center transition-transform duration-500 transform-style-3d shadow-xl rounded-2xl">
                             <!-- Mặt trước: Tiếng Việt -->
                             <div class="absolute w-full h-full backface-hidden bg-white border-2 border-slate-100 rounded-2xl flex flex-col justify-center items-center p-8">
+                                <span id="fc-learned-badge" class="hidden absolute top-4 right-4 text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full"><i class="fas fa-check mr-1"></i>Đã thuộc</span>
                                 <span class="text-sm text-slate-400 font-medium uppercase tracking-widest mb-4">Tiếng Việt</span>
                                 <h3 class="text-4xl font-bold text-slate-800" id="fc-vi">Word</h3>
                                 <p class="text-slate-400 mt-8 text-sm"><i class="fas fa-hand-pointer mr-2"></i>Chạm để lật</p>
@@ -102,16 +143,25 @@
                                 <div class="w-full grid grid-cols-1 gap-4 divide-y divide-indigo-200/50 text-left">
                                     <div class="pb-2">
                                         <span class="text-xs font-bold text-indigo-500 uppercase">English</span>
-                                        <div class="text-2xl font-bold text-slate-800" id="fc-en">Word</div>
+                                        <div class="flex items-center gap-3">
+                                            <div class="text-2xl font-bold text-slate-800" id="fc-en">Word</div>
+                                            <span id="fc-en-speak"></span>
+                                        </div>
                                     </div>
                                     <div class="py-2">
                                         <span class="text-xs font-bold text-rose-500 uppercase">Tiếng Nhật</span>
-                                        <div class="text-2xl font-bold text-slate-800" id="fc-jp-word">Word</div>
+                                        <div class="flex items-center gap-3">
+                                            <div class="text-2xl font-bold text-slate-800" id="fc-jp-word">Word</div>
+                                            <span id="fc-jp-speak"></span>
+                                        </div>
                                         <div class="text-sm text-slate-600" id="fc-jp-pron">pron</div>
                                     </div>
                                     <div class="pt-2">
                                         <span class="text-xs font-bold text-amber-600 uppercase">Tiếng Trung</span>
-                                        <div class="text-2xl font-bold text-slate-800" id="fc-cn-word">Word</div>
+                                        <div class="flex items-center gap-3">
+                                            <div class="text-2xl font-bold text-slate-800" id="fc-cn-word">Word</div>
+                                            <span id="fc-cn-speak"></span>
+                                        </div>
                                         <div class="text-sm text-slate-600" id="fc-cn-pron">pron</div>
                                     </div>
                                 </div>
@@ -125,7 +175,10 @@
                         <button id="fc-shuffle" class="px-6 py-3 rounded-full bg-white shadow text-slate-600 font-medium hover:text-indigo-600 hover:bg-slate-50 transition"><i class="fas fa-random mr-2"></i>Trộn bài</button>
                         <button id="fc-next" class="w-12 h-12 rounded-full bg-white shadow text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition"><i class="fas fa-chevron-right"></i></button>
                     </div>
-                    <div class="mt-6 text-slate-500 font-medium bg-white px-4 py-1 rounded-full shadow-sm" id="fc-progress">1 / 100</div>
+                    <div class="mt-5">
+                        <button id="fc-learned-btn" class="px-6 py-3 rounded-full border-2 font-medium transition">Đánh dấu đã thuộc</button>
+                    </div>
+                    <div class="mt-5 text-slate-500 font-medium bg-white px-4 py-1 rounded-full shadow-sm" id="fc-progress">1 / 100</div>
                 </div>
 
                 <div id="welcome-area" class="h-full flex flex-col items-center justify-center text-center text-slate-500 py-20">
@@ -645,6 +698,570 @@
             }
         ];
 
+        // ===== NỘI DUNG MỞ RỘNG: thêm mẫu câu & hội thoại ngắn thông dụng =====
+        const extraContent = {
+            giadinh: {
+                sentences: [
+                    { vi: "Bố tôi làm bác sĩ.", en: "My father is a doctor.", jp: "父は医者です。(Chichi wa isha desu.)", cn: "我爸爸是医生。(Wǒ bàba shì yīshēng.)" },
+                    { vi: "Chị gái tôi đã kết hôn rồi.", en: "My older sister is already married.", jp: "姉はもう結婚しています。(Ane wa mō kekkon shiteimasu.)", cn: "我姐姐已经结婚了。(Wǒ jiějie yǐjīng jiéhūn le.)" },
+                    { vi: "Bạn có anh chị em không?", en: "Do you have any siblings?", jp: "ご兄弟はいますか。(Gokyōdai wa imasu ka.)", cn: "你有兄弟姐妹吗？(Nǐ yǒu xiōngdì jiěmèi ma?)" },
+                    { vi: "Ông bà tôi sống ở quê.", en: "My grandparents live in the countryside.", jp: "祖父母は田舎に住んでいます。(Sofubo wa inaka ni sundeimasu.)", cn: "我的爷爷奶奶住在乡下。(Wǒ de yéye nǎinai zhù zài xiāngxià.)" },
+                    { vi: "Cuối tuần cả nhà tôi cùng ăn cơm.", en: "My whole family eats together on weekends.", jp: "週末は家族みんなで食事をします。(Shūmatsu wa kazoku minna de shokuji o shimasu.)", cn: "周末我们全家一起吃饭。(Zhōumò wǒmen quánjiā yìqǐ chīfàn.)" },
+                    { vi: "Con trai tôi năm nay 5 tuổi.", en: "My son is five years old this year.", jp: "息子は今年五歳です。(Musuko wa kotoshi gosai desu.)", cn: "我儿子今年五岁。(Wǒ érzi jīnnián wǔ suì.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Hỏi thăm gia đình",
+                        lines: [
+                            { sp: "A", vi: "Gia đình bạn có mấy người?", en: "How many people are in your family?", jp: "ご家族は何人ですか。(Gokazoku wa nannin desu ka.)", cn: "你家有几口人？(Nǐ jiā yǒu jǐ kǒu rén?)" },
+                            { sp: "B", vi: "Nhà tôi có 4 người: bố, mẹ, em gái và tôi.", en: "There are four: my father, mother, younger sister and me.", jp: "四人です。父と母と妹と私です。(Yonin desu. Chichi to haha to imōto to watashi desu.)", cn: "四口人：爸爸、妈妈、妹妹和我。(Sì kǒu rén: bàba, māma, mèimei hé wǒ.)" },
+                            { sp: "A", vi: "Em gái bạn bao nhiêu tuổi?", en: "How old is your younger sister?", jp: "妹さんは何歳ですか。(Imōto-san wa nansai desu ka.)", cn: "你妹妹多大了？(Nǐ mèimei duōdà le?)" },
+                            { sp: "B", vi: "Em ấy 15 tuổi, đang học cấp ba.", en: "She is 15 and in high school.", jp: "十五歳で、高校生です。(Jūgosai de, kōkōsei desu.)", cn: "她十五岁，在上高中。(Tā shíwǔ suì, zài shàng gāozhōng.)" },
+                            { sp: "A", vi: "Bố mẹ bạn làm nghề gì?", en: "What do your parents do?", jp: "ご両親のお仕事は何ですか。(Goryōshin no oshigoto wa nan desu ka.)", cn: "你父母做什么工作？(Nǐ fùmǔ zuò shénme gōngzuò?)" },
+                            { sp: "B", vi: "Bố tôi là kỹ sư, mẹ tôi là giáo viên.", en: "My father is an engineer and my mother is a teacher.", jp: "父はエンジニアで、母は先生です。(Chichi wa enjinia de, haha wa sensei desu.)", cn: "我爸爸是工程师，妈妈是老师。(Wǒ bàba shì gōngchéngshī, māma shì lǎoshī.)" }
+                        ]
+                    },
+                    {
+                        title: "Gọi điện về nhà",
+                        lines: [
+                            { sp: "Mẹ", vi: "Con ăn cơm chưa?", en: "Have you eaten yet?", jp: "ご飯は食べた？(Gohan wa tabeta?)", cn: "你吃饭了吗？(Nǐ chīfàn le ma?)" },
+                            { sp: "Con", vi: "Con ăn rồi ạ. Mẹ khỏe không?", en: "Yes, I have. How are you, Mom?", jp: "食べたよ。お母さんは元気？(Tabeta yo. Okāsan wa genki?)", cn: "吃了。妈妈你身体好吗？(Chī le. Māma nǐ shēntǐ hǎo ma?)" },
+                            { sp: "Mẹ", vi: "Mẹ khỏe. Cuối tuần con có về nhà không?", en: "I'm fine. Are you coming home this weekend?", jp: "元気よ。週末は帰ってくる？(Genki yo. Shūmatsu wa kaette kuru?)", cn: "我很好。周末你回家吗？(Wǒ hěn hǎo. Zhōumò nǐ huí jiā ma?)" },
+                            { sp: "Con", vi: "Dạ có, con sẽ về vào chiều thứ Bảy.", en: "Yes, I'll be back on Saturday afternoon.", jp: "うん、土曜日の午後に帰るよ。(Un, doyōbi no gogo ni kaeru yo.)", cn: "回，我星期六下午回去。(Huí, wǒ xīngqīliù xiàwǔ huíqù.)" },
+                            { sp: "Mẹ", vi: "Tốt quá, mẹ sẽ nấu món con thích.", en: "Great, I'll cook your favorite dish.", jp: "よかった。好きな料理を作るね。(Yokatta. Suki na ryōri o tsukuru ne.)", cn: "太好了，我做你爱吃的菜。(Tài hǎo le, wǒ zuò nǐ ài chī de cài.)" }
+                        ]
+                    }
+                ]
+            },
+            vatdungnha: {
+                sentences: [
+                    { vi: "Máy giặt bị hỏng rồi.", en: "The washing machine is broken.", jp: "洗濯機が壊れました。(Sentakuki ga kowaremashita.)", cn: "洗衣机坏了。(Xǐyījī huài le.)" },
+                    { vi: "Làm ơn bật điều hòa lên.", en: "Please turn on the air conditioner.", jp: "エアコンをつけてください。(Eakon o tsukete kudasai.)", cn: "请把空调打开。(Qǐng bǎ kōngtiáo dǎkāi.)" },
+                    { vi: "Cái gương treo trên tường.", en: "The mirror hangs on the wall.", jp: "鏡は壁に掛かっています。(Kagami wa kabe ni kakatteimasu.)", cn: "镜子挂在墙上。(Jìngzi guà zài qiáng shàng.)" },
+                    { vi: "Tôi để chìa khóa ở trên bàn.", en: "I left the key on the table.", jp: "鍵を机の上に置きました。(Kagi o tsukue no ue ni okimashita.)", cn: "我把钥匙放在桌子上了。(Wǒ bǎ yàoshi fàng zài zhuōzi shàng le.)" },
+                    { vi: "Xin hãy đóng cửa sổ lại.", en: "Please close the window.", jp: "窓を閉めてください。(Mado o shimete kudasai.)", cn: "请把窗户关上。(Qǐng bǎ chuānghu guān shàng.)" },
+                    { vi: "Nhà tôi mới mua một cái nồi cơm điện.", en: "We just bought a new rice cooker.", jp: "新しい炊飯器を買いました。(Atarashii suihanki o kaimashita.)", cn: "我家新买了一个电饭煲。(Wǒ jiā xīn mǎi le yí ge diànfànbāo.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Cùng nhau dọn dẹp nhà cửa",
+                        lines: [
+                            { sp: "Anh", vi: "Em giúp anh dọn phòng khách nhé?", en: "Shall we clean the living room together?", jp: "一緒に居間を片付けようか。(Issho ni ima o katazukeyō ka.)", cn: "我们一起收拾客厅吧？(Wǒmen yìqǐ shōushi kètīng ba?)" },
+                            { sp: "Em", vi: "Được, để em lấy máy hút bụi.", en: "Sure, I'll get the vacuum cleaner.", jp: "いいよ、掃除機を持ってくる。(Ii yo, sōjiki o motte kuru.)", cn: "好，我去拿吸尘器。(Hǎo, wǒ qù ná xīchénqì.)" },
+                            { sp: "Anh", vi: "Nhớ lau cả cái bàn nữa nhé.", en: "Don't forget to wipe the table too.", jp: "机も拭いてね。(Tsukue mo fuite ne.)", cn: "别忘了也擦一下桌子。(Bié wàng le yě cā yíxià zhuōzi.)" },
+                            { sp: "Em", vi: "Vâng, xong rồi em sẽ đi giặt chăn.", en: "Okay, after that I'll wash the blanket.", jp: "うん、終わったら毛布を洗うよ。(Un, owattara mōfu o arau yo.)", cn: "好，弄完我去洗毯子。(Hǎo, nòng wán wǒ qù xǐ tǎnzi.)" }
+                        ]
+                    },
+                    {
+                        title: "Mua đồ gia dụng",
+                        lines: [
+                            { sp: "Khách", vi: "Xin chào, tôi muốn mua một cái tủ lạnh.", en: "Hello, I'd like to buy a refrigerator.", jp: "こんにちは、冷蔵庫を買いたいのですが。(Konnichiwa, reizōko o kaitai no desu ga.)", cn: "你好，我想买一台冰箱。(Nǐ hǎo, wǒ xiǎng mǎi yì tái bīngxiāng.)" },
+                            { sp: "Nhân viên", vi: "Anh muốn loại lớn hay loại nhỏ ạ?", en: "Would you like a large one or a small one?", jp: "大きいのと小さいの、どちらがいいですか。(Ōkii no to chiisai no, dochira ga ii desu ka.)", cn: "您想要大的还是小的？(Nín xiǎng yào dà de háishi xiǎo de?)" },
+                            { sp: "Khách", vi: "Loại vừa thôi, nhà tôi có 3 người.", en: "A medium one; there are three of us.", jp: "中くらいのがいいです。三人家族なので。(Chūkurai no ga ii desu. Sannin kazoku nanode.)", cn: "中等的就行，我家有三口人。(Zhōngděng de jiù xíng, wǒ jiā yǒu sān kǒu rén.)" },
+                            { sp: "Nhân viên", vi: "Cái này giá 8 triệu, bảo hành 2 năm ạ.", en: "This one is 8 million, with a two-year warranty.", jp: "これは八百万ドンで、保証は二年です。(Kore wa happyakuman don de, hoshō wa ninen desu.)", cn: "这台八百万盾，保修两年。(Zhè tái bābǎi wàn dùn, bǎoxiū liǎng nián.)" },
+                            { sp: "Khách", vi: "Được, tôi lấy cái này. Có giao hàng tận nhà không?", en: "Okay, I'll take it. Do you deliver to my home?", jp: "じゃあ、これにします。配達はできますか。(Jā, kore ni shimasu. Haitatsu wa dekimasu ka.)", cn: "好，我要这台。可以送货上门吗？(Hǎo, wǒ yào zhè tái. Kěyǐ sònghuò shàngmén ma?)" }
+                        ]
+                    }
+                ]
+            },
+            vatdungcongty: {
+                sentences: [
+                    { vi: "Máy in hết giấy rồi.", en: "The printer is out of paper.", jp: "プリンターの紙がなくなりました。(Purintā no kami ga naku narimashita.)", cn: "打印机没纸了。(Dǎyìnjī méi zhǐ le.)" },
+                    { vi: "Cho tôi mượn cây bút bi một chút.", en: "Let me borrow your pen for a moment.", jp: "ボールペンをちょっと貸してください。(Bōrupen o chotto kashite kudasai.)", cn: "借我用一下圆珠笔。(Jiè wǒ yòng yíxià yuánzhūbǐ.)" },
+                    { vi: "Tôi sẽ chuẩn bị máy chiếu cho cuộc họp.", en: "I'll set up the projector for the meeting.", jp: "会議のためにプロジェクターを準備します。(Kaigi no tame ni purojekutā o junbi shimasu.)", cn: "我来为会议准备投影仪。(Wǒ lái wèi huìyì zhǔnbèi tóuyǐngyí.)" },
+                    { vi: "Xin gửi tài liệu này qua email cho tôi.", en: "Please email me this document.", jp: "この資料をメールで送ってください。(Kono shiryō o mēru de okutte kudasai.)", cn: "请把这份资料用邮件发给我。(Qǐng bǎ zhè fèn zīliào yòng yóujiàn fā gěi wǒ.)" },
+                    { vi: "Laptop của tôi sắp hết pin.", en: "My laptop is running out of battery.", jp: "ノートパソコンの電池が切れそうです。(Nōto pasokon no denchi ga kiresō desu.)", cn: "我的笔记本电脑快没电了。(Wǒ de bǐjìběn diànnǎo kuài méi diàn le.)" },
+                    { vi: "Đây là danh thiếp của tôi.", en: "Here is my business card.", jp: "これは私の名刺です。(Kore wa watashi no meishi desu.)", cn: "这是我的名片。(Zhè shì wǒ de míngpiàn.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Chuẩn bị cho cuộc họp",
+                        lines: [
+                            { sp: "Trưởng phòng", vi: "Cuộc họp bắt đầu lúc 2 giờ, em chuẩn bị xong chưa?", en: "The meeting starts at 2. Are you ready?", jp: "会議は二時からです。準備はできましたか。(Kaigi wa niji kara desu. Junbi wa dekimashita ka.)", cn: "会议两点开始，你准备好了吗？(Huìyì liǎng diǎn kāishǐ, nǐ zhǔnbèi hǎo le ma?)" },
+                            { sp: "Nhân viên", vi: "Dạ rồi, em đã in 10 bộ tài liệu.", en: "Yes, I printed ten sets of documents.", jp: "はい、資料を十部印刷しました。(Hai, shiryō o jūbu insatsu shimashita.)", cn: "好了，我打印了十份资料。(Hǎo le, wǒ dǎyìn le shí fèn zīliào.)" },
+                            { sp: "Trưởng phòng", vi: "Máy chiếu ở phòng họp hoạt động tốt chứ?", en: "Does the projector in the meeting room work?", jp: "会議室のプロジェクターは使えますか。(Kaigishitsu no purojekutā wa tsukaemasu ka.)", cn: "会议室的投影仪能用吗？(Huìyìshì de tóuyǐngyí néng yòng ma?)" },
+                            { sp: "Nhân viên", vi: "Em đã kiểm tra rồi, không có vấn đề gì ạ.", en: "I checked it; there's no problem.", jp: "確認しました。問題ありません。(Kakunin shimashita. Mondai arimasen.)", cn: "我检查过了，没有问题。(Wǒ jiǎnchá guò le, méiyǒu wèntí.)" }
+                        ]
+                    },
+                    {
+                        title: "Mượn đồ dùng văn phòng",
+                        lines: [
+                            { sp: "A", vi: "Xin lỗi, cái dập ghim để ở đâu vậy?", en: "Excuse me, where is the stapler?", jp: "すみません、ホッチキスはどこですか。(Sumimasen, hotchikisu wa doko desu ka.)", cn: "请问，订书机在哪里？(Qǐngwèn, dìngshūjī zài nǎlǐ?)" },
+                            { sp: "B", vi: "Ở trong ngăn kéo của tủ tài liệu.", en: "In the drawer of the filing cabinet.", jp: "書類棚の引き出しの中です。(Shoruidana no hikidashi no naka desu.)", cn: "在文件柜的抽屉里。(Zài wénjiànguì de chōuti lǐ.)" },
+                            { sp: "A", vi: "Cảm ơn. Còn băng keo thì sao?", en: "Thanks. And what about the tape?", jp: "ありがとう。テープはありますか。(Arigatō. Tēpu wa arimasu ka.)", cn: "谢谢。那胶带呢？(Xièxie. Nà jiāodài ne?)" },
+                            { sp: "B", vi: "Hết rồi, chiều nay tôi sẽ đi mua thêm.", en: "We're out. I'll buy more this afternoon.", jp: "なくなりました。午後買ってきます。(Naku narimashita. Gogo katte kimasu.)", cn: "用完了，今天下午我去买。(Yòng wán le, jīntiān xiàwǔ wǒ qù mǎi.)" }
+                        ]
+                    }
+                ]
+            },
+            tuyendung: {
+                sentences: [
+                    { vi: "Tôi có 3 năm kinh nghiệm trong lĩnh vực này.", en: "I have three years of experience in this field.", jp: "この分野で三年の経験があります。(Kono bunya de sannen no keiken ga arimasu.)", cn: "我在这个领域有三年经验。(Wǒ zài zhège lǐngyù yǒu sān nián jīngyàn.)" },
+                    { vi: "Thời gian thử việc là 2 tháng.", en: "The probation period is two months.", jp: "試用期間は二ヶ月です。(Shiyō kikan wa nikagetsu desu.)", cn: "试用期是两个月。(Shìyòngqī shì liǎng ge yuè.)" },
+                    { vi: "Công ty có chế độ phúc lợi rất tốt.", en: "The company has very good benefits.", jp: "会社の福利厚生は充実しています。(Kaisha no fukuri kōsei wa jūjitsu shiteimasu.)", cn: "公司的福利很好。(Gōngsī de fúlì hěn hǎo.)" },
+                    { vi: "Tôi muốn nộp đơn xin việc vào vị trí này.", en: "I'd like to apply for this position.", jp: "このポジションに応募したいです。(Kono pojishon ni ōbo shitai desu.)", cn: "我想应聘这个职位。(Wǒ xiǎng yìngpìn zhège zhíwèi.)" },
+                    { vi: "Xin chúc mừng, bạn đã trúng tuyển.", en: "Congratulations, you got the job.", jp: "おめでとうございます、採用です。(Omedetō gozaimasu, saiyō desu.)", cn: "恭喜你，你被录用了。(Gōngxǐ nǐ, nǐ bèi lùyòng le.)" },
+                    { vi: "Tháng sau tôi sẽ được thăng chức.", en: "I will be promoted next month.", jp: "来月昇進します。(Raigetsu shōshin shimasu.)", cn: "我下个月要升职了。(Wǒ xià ge yuè yào shēngzhí le.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Trong buổi phỏng vấn",
+                        lines: [
+                            { sp: "Nhà tuyển dụng", vi: "Mời bạn giới thiệu ngắn gọn về bản thân.", en: "Please introduce yourself briefly.", jp: "簡単に自己紹介をお願いします。(Kantan ni jiko shōkai o onegai shimasu.)", cn: "请简单做一下自我介绍。(Qǐng jiǎndān zuò yíxià zìwǒ jièshào.)" },
+                            { sp: "Ứng viên", vi: "Tôi tên Nam, tốt nghiệp ngành công nghệ thông tin.", en: "My name is Nam; I graduated in information technology.", jp: "ナムと申します。情報技術を専攻しました。(Namu to mōshimasu. Jōhō gijutsu o senkō shimashita.)", cn: "我叫南，毕业于信息技术专业。(Wǒ jiào Nán, bìyè yú xìnxī jìshù zhuānyè.)" },
+                            { sp: "Nhà tuyển dụng", vi: "Tại sao bạn muốn làm việc ở công ty chúng tôi?", en: "Why do you want to work at our company?", jp: "なぜ弊社で働きたいのですか。(Naze heisha de hatarakitai no desu ka.)", cn: "你为什么想来我们公司工作？(Nǐ wèishénme xiǎng lái wǒmen gōngsī gōngzuò?)" },
+                            { sp: "Ứng viên", vi: "Vì tôi muốn phát triển kỹ năng trong môi trường chuyên nghiệp.", en: "Because I want to develop my skills in a professional environment.", jp: "プロの環境で自分のスキルを伸ばしたいからです。(Puro no kankyō de jibun no sukiru o nobashitai kara desu.)", cn: "因为我想在专业的环境中提升自己的技能。(Yīnwèi wǒ xiǎng zài zhuānyè de huánjìng zhōng tíshēng zìjǐ de jìnéng.)" },
+                            { sp: "Nhà tuyển dụng", vi: "Khi nào bạn có thể bắt đầu làm việc?", en: "When can you start?", jp: "いつから働けますか。(Itsu kara hatarakemasu ka.)", cn: "你什么时候可以开始上班？(Nǐ shénme shíhòu kěyǐ kāishǐ shàngbān?)" },
+                            { sp: "Ứng viên", vi: "Tôi có thể bắt đầu từ đầu tháng sau.", en: "I can start at the beginning of next month.", jp: "来月の初めから始められます。(Raigetsu no hajime kara hajimeraremasu.)", cn: "我下个月初就可以开始。(Wǒ xià ge yuè chū jiù kěyǐ kāishǐ.)" }
+                        ]
+                    },
+                    {
+                        title: "Xin nghỉ phép",
+                        lines: [
+                            { sp: "Nhân viên", vi: "Thưa anh, tuần sau em muốn xin nghỉ hai ngày.", en: "Sir, I'd like to take two days off next week.", jp: "部長、来週二日間休みをいただきたいのですが。(Buchō, raishū futsukakan yasumi o itadakitai no desu ga.)", cn: "经理，下周我想请两天假。(Jīnglǐ, xià zhōu wǒ xiǎng qǐng liǎng tiān jià.)" },
+                            { sp: "Trưởng phòng", vi: "Em có việc gì vậy?", en: "What is it about?", jp: "何かありましたか。(Nanika arimashita ka.)", cn: "有什么事吗？(Yǒu shénme shì ma?)" },
+                            { sp: "Nhân viên", vi: "Em phải về quê lo việc gia đình ạ.", en: "I have to go home for a family matter.", jp: "家族の用事で実家に帰ります。(Kazoku no yōji de jikka ni kaerimasu.)", cn: "我要回老家处理家里的事。(Wǒ yào huí lǎojiā chǔlǐ jiā lǐ de shì.)" },
+                            { sp: "Trưởng phòng", vi: "Được, em nhớ bàn giao công việc cho đồng nghiệp nhé.", en: "All right, remember to hand your work over to a colleague.", jp: "分かりました。同僚に引き継ぎをしてください。(Wakarimashita. Dōryō ni hikitsugi o shite kudasai.)", cn: "好的，记得把工作交接给同事。(Hǎo de, jìde bǎ gōngzuò jiāojiē gěi tóngshì.)" }
+                        ]
+                    }
+                ]
+            },
+            phuongtien: {
+                sentences: [
+                    { vi: "Xin dừng lại ở trước nhà ga.", en: "Please stop in front of the station.", jp: "駅の前で止めてください。(Eki no mae de tomete kudasai.)", cn: "请在车站前面停车。(Qǐng zài chēzhàn qiánmiàn tíngchē.)" },
+                    { vi: "Từ đây đến sân bay mất bao lâu?", en: "How long does it take from here to the airport?", jp: "ここから空港までどのくらいかかりますか。(Koko kara kūkō made dono kurai kakarimasu ka.)", cn: "从这里到机场要多久？(Cóng zhèlǐ dào jīchǎng yào duōjiǔ?)" },
+                    { vi: "Tôi đi làm bằng tàu điện ngầm mỗi ngày.", en: "I take the subway to work every day.", jp: "毎日地下鉄で通勤しています。(Mainichi chikatetsu de tsūkin shiteimasu.)", cn: "我每天坐地铁上班。(Wǒ měitiān zuò dìtiě shàngbān.)" },
+                    { vi: "Xe buýt số 5 đi đến bảo tàng.", en: "Bus number 5 goes to the museum.", jp: "五番のバスは博物館へ行きます。(Goban no basu wa hakubutsukan e ikimasu.)", cn: "5路公交车到博物馆。(Wǔ lù gōngjiāochē dào bówùguǎn.)" },
+                    { vi: "Bãi đỗ xe nằm ở tầng hầm.", en: "The parking lot is in the basement.", jp: "駐車場は地下にあります。(Chūshajō wa chika ni arimasu.)", cn: "停车场在地下。(Tíngchēchǎng zài dìxià.)" },
+                    { vi: "Tôi bị lỡ chuyến tàu cuối cùng.", en: "I missed the last train.", jp: "終電に乗り遅れました。(Shūden ni noriokuremashita.)", cn: "我错过了末班车。(Wǒ cuòguò le mòbānchē.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Đi taxi ra sân bay",
+                        lines: [
+                            { sp: "Khách", vi: "Anh ơi, cho tôi đến sân bay Nội Bài.", en: "Driver, take me to Noi Bai airport, please.", jp: "運転手さん、ノイバイ空港までお願いします。(Untenshu-san, Noibai kūkō made onegai shimasu.)", cn: "师傅，我去内排机场。(Shīfu, wǒ qù Nèipái jīchǎng.)" },
+                            { sp: "Tài xế", vi: "Vâng, khoảng 40 phút ạ.", en: "Sure, it takes about 40 minutes.", jp: "はい、四十分ぐらいかかります。(Hai, yonjuppun gurai kakarimasu.)", cn: "好的，大概四十分钟。(Hǎo de, dàgài sìshí fēnzhōng.)" },
+                            { sp: "Khách", vi: "Nhanh giúp tôi nhé, tôi sắp trễ chuyến bay.", en: "Please hurry, I'm about to miss my flight.", jp: "急いでください。飛行機に遅れそうです。(Isoide kudasai. Hikōki ni okuresō desu.)", cn: "请快一点，我快赶不上飞机了。(Qǐng kuài yìdiǎn, wǒ kuài gǎn bu shàng fēijī le.)" },
+                            { sp: "Tài xế", vi: "Được, tôi đi đường vành đai. Tổng cộng 350 nghìn.", en: "Okay, I'll take the ring road. That's 350,000 in total.", jp: "分かりました。環状道路で行きます。全部で三十五万ドンです。(Wakarimashita. Kanjō dōro de ikimasu. Zenbu de sanjūgoman don desu.)", cn: "好，我走环线。一共三十五万盾。(Hǎo, wǒ zǒu huánxiàn. Yígòng sānshíwǔ wàn dùn.)" }
+                        ]
+                    },
+                    {
+                        title: "Hỏi tuyến xe buýt",
+                        lines: [
+                            { sp: "A", vi: "Xin lỗi, đi đến công viên thì bắt xe buýt số mấy?", en: "Excuse me, which bus goes to the park?", jp: "すみません、公園へは何番のバスですか。(Sumimasen, kōen e wa nanban no basu desu ka.)", cn: "请问，去公园坐几路车？(Qǐngwèn, qù gōngyuán zuò jǐ lù chē?)" },
+                            { sp: "B", vi: "Bạn đi xe số 12, xuống ở trạm thứ ba.", en: "Take bus 12 and get off at the third stop.", jp: "十二番のバスに乗って、三つ目で降りてください。(Jūniban no basu ni notte, mittsume de orite kudasai.)", cn: "你坐12路，在第三站下车。(Nǐ zuò shí'èr lù, zài dì sān zhàn xià chē.)" },
+                            { sp: "A", vi: "Vé bao nhiêu tiền vậy?", en: "How much is the ticket?", jp: "料金はいくらですか。(Ryōkin wa ikura desu ka.)", cn: "车票多少钱？(Chēpiào duōshǎo qián?)" },
+                            { sp: "B", vi: "Bảy nghìn đồng một lượt.", en: "Seven thousand dong per ride.", jp: "一回七千ドンです。(Ikkai nanasen don desu.)", cn: "一次七千盾。(Yí cì qīqiān dùn.)" }
+                        ]
+                    }
+                ]
+            },
+            dulich: {
+                sentences: [
+                    { vi: "Tôi đã đặt phòng qua mạng.", en: "I booked the room online.", jp: "ネットで部屋を予約しました。(Netto de heya o yoyaku shimashita.)", cn: "我在网上订了房间。(Wǒ zài wǎngshàng dìng le fángjiān.)" },
+                    { vi: "Chuyến bay bị hoãn 2 tiếng.", en: "The flight is delayed by two hours.", jp: "飛行機が二時間遅れています。(Hikōki ga nijikan okureteimasu.)", cn: "航班延误了两个小时。(Hángbān yánwù le liǎng ge xiǎoshí.)" },
+                    { vi: "Ở đây có bán quà lưu niệm không?", en: "Do you sell souvenirs here?", jp: "ここでお土産を売っていますか。(Koko de omiyage o utteimasu ka.)", cn: "这里卖纪念品吗？(Zhèlǐ mài jìniànpǐn ma?)" },
+                    { vi: "Tôi có thể thanh toán bằng thẻ tín dụng không?", en: "Can I pay by credit card?", jp: "クレジットカードで払えますか。(Kurejitto kādo de haraemasu ka.)", cn: "可以刷信用卡吗？(Kěyǐ shuā xìnyòngkǎ ma?)" },
+                    { vi: "Phong cảnh ở đây thật tuyệt vời.", en: "The scenery here is wonderful.", jp: "ここの景色は素晴らしいです。(Koko no keshiki wa subarashii desu.)", cn: "这里的风景太美了。(Zhèlǐ de fēngjǐng tài měi le.)" },
+                    { vi: "Hành lý của tôi bị thất lạc.", en: "My luggage is lost.", jp: "荷物がなくなりました。(Nimotsu ga naku narimashita.)", cn: "我的行李丢了。(Wǒ de xínglǐ diū le.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Nhận phòng khách sạn",
+                        lines: [
+                            { sp: "Khách", vi: "Chào bạn, tôi muốn nhận phòng. Tôi đã đặt trước.", en: "Hello, I'd like to check in. I have a reservation.", jp: "こんにちは、チェックインをお願いします。予約しています。(Konnichiwa, chekkuin o onegai shimasu. Yoyaku shiteimasu.)", cn: "你好，我要办理入住，我预订过了。(Nǐ hǎo, wǒ yào bànlǐ rùzhù, wǒ yùdìng guò le.)" },
+                            { sp: "Lễ tân", vi: "Vui lòng cho tôi xem hộ chiếu ạ.", en: "May I see your passport, please?", jp: "パスポートを見せてください。(Pasupōto o misete kudasai.)", cn: "请出示您的护照。(Qǐng chūshì nín de hùzhào.)" },
+                            { sp: "Khách", vi: "Đây ạ. Phòng của tôi là phòng đôi.", en: "Here you are. My room is a double room.", jp: "どうぞ。ダブルルームです。(Dōzo. Daburu rūmu desu.)", cn: "给您。我订的是双人房。(Gěi nín. Wǒ dìng de shì shuāngrénfáng.)" },
+                            { sp: "Lễ tân", vi: "Phòng 502, tầng 5. Bữa sáng từ 6 đến 9 giờ ạ.", en: "Room 502 on the fifth floor. Breakfast is from 6 to 9.", jp: "五階の五〇二号室です。朝食は六時から九時までです。(Gokai no gomaruni gōshitsu desu. Chōshoku wa rokuji kara kuji made desu.)", cn: "502房间，在五楼。早餐时间是六点到九点。(Wǔ líng èr fángjiān, zài wǔ lóu. Zǎocān shíjiān shì liù diǎn dào jiǔ diǎn.)" },
+                            { sp: "Khách", vi: "Cảm ơn bạn nhiều.", en: "Thank you very much.", jp: "ありがとうございます。(Arigatō gozaimasu.)", cn: "非常感谢。(Fēicháng gǎnxiè.)" }
+                        ]
+                    },
+                    {
+                        title: "Hỏi thông tin du lịch",
+                        lines: [
+                            { sp: "Du khách", vi: "Ở thành phố này có gì đáng tham quan không?", en: "Is there anything worth visiting in this city?", jp: "この街で見どころはありますか。(Kono machi de midokoro wa arimasu ka.)", cn: "这个城市有什么值得游览的地方吗？(Zhège chéngshì yǒu shénme zhídé yóulǎn de dìfang ma?)" },
+                            { sp: "Hướng dẫn viên", vi: "Bạn nên đi bảo tàng và bãi biển phía đông.", en: "You should visit the museum and the eastern beach.", jp: "博物館と東のビーチがおすすめです。(Hakubutsukan to higashi no bīchi ga osusume desu.)", cn: "建议你去博物馆和东边的海滩。(Jiànyì nǐ qù bówùguǎn hé dōngbiān de hǎitān.)" },
+                            { sp: "Du khách", vi: "Giá vé vào bảo tàng là bao nhiêu?", en: "How much is the museum ticket?", jp: "博物館の入場料はいくらですか。(Hakubutsukan no nyūjōryō wa ikura desu ka.)", cn: "博物馆的门票多少钱？(Bówùguǎn de ménpiào duōshǎo qián?)" },
+                            { sp: "Hướng dẫn viên", vi: "Năm mươi nghìn một người, trẻ em miễn phí.", en: "Fifty thousand per person; children are free.", jp: "一人五万ドン、子供は無料です。(Hitori goman don, kodomo wa muryō desu.)", cn: "每人五万盾，儿童免费。(Měi rén wǔ wàn dùn, értóng miǎnfèi.)" }
+                        ]
+                    }
+                ]
+            },
+            thucpham: {
+                sentences: [
+                    { vi: "Tôi không ăn được đồ cay.", en: "I can't eat spicy food.", jp: "辛いものが食べられません。(Karai mono ga taberaremasen.)", cn: "我不能吃辣。(Wǒ bù néng chī là.)" },
+                    { vi: "Cho tôi xem thực đơn.", en: "May I see the menu?", jp: "メニューを見せてください。(Menyū o misete kudasai.)", cn: "请给我看一下菜单。(Qǐng gěi wǒ kàn yíxià càidān.)" },
+                    { vi: "Món này có thịt lợn không?", en: "Does this dish contain pork?", jp: "この料理に豚肉は入っていますか。(Kono ryōri ni butaniku wa haitteimasu ka.)", cn: "这道菜里有猪肉吗？(Zhè dào cài lǐ yǒu zhūròu ma?)" },
+                    { vi: "Tôi muốn uống một tách cà phê sữa.", en: "I'd like a cup of coffee with milk.", jp: "ミルク入りのコーヒーを一杯お願いします。(Miruku iri no kōhī o ippai onegai shimasu.)", cn: "我想喝一杯牛奶咖啡。(Wǒ xiǎng hē yì bēi niúnǎi kāfēi.)" },
+                    { vi: "Xin cho thêm một chút muối.", en: "Please add a little salt.", jp: "塩を少し足してください。(Shio o sukoshi tashite kudasai.)", cn: "请再加一点盐。(Qǐng zài jiā yìdiǎn yán.)" },
+                    { vi: "Tính tiền giúp tôi nhé.", en: "Check, please.", jp: "お会計をお願いします。(Okaikei o onegai shimasu.)", cn: "请结账。(Qǐng jiézhàng.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Gọi món ở nhà hàng",
+                        lines: [
+                            { sp: "Nhân viên", vi: "Anh chị dùng gì ạ?", en: "What would you like to order?", jp: "ご注文は何になさいますか。(Gochūmon wa nani ni nasaimasu ka.)", cn: "请问你们要点什么？(Qǐngwèn nǐmen yào diǎn shénme?)" },
+                            { sp: "Khách", vi: "Cho tôi một tô mì bò và một ly trà đá.", en: "A bowl of beef noodles and an iced tea, please.", jp: "牛肉麺一杯とアイスティーを一つお願いします。(Gyūniku men ippai to aisutī o hitotsu onegai shimasu.)", cn: "给我一碗牛肉面和一杯冰茶。(Gěi wǒ yì wǎn niúròumiàn hé yì bēi bīngchá.)" },
+                            { sp: "Nhân viên", vi: "Anh có muốn thêm trứng không ạ?", en: "Would you like to add an egg?", jp: "卵を追加しますか。(Tamago o tsuika shimasu ka.)", cn: "要加个鸡蛋吗？(Yào jiā ge jīdàn ma?)" },
+                            { sp: "Khách", vi: "Có, cho tôi thêm một quả trứng.", en: "Yes, please add one egg.", jp: "はい、卵を一つ追加してください。(Hai, tamago o hitotsu tsuika shite kudasai.)", cn: "要，加一个鸡蛋。(Yào, jiā yí ge jīdàn.)" },
+                            { sp: "Nhân viên", vi: "Vâng, xin đợi khoảng 10 phút ạ.", en: "All right, please wait about ten minutes.", jp: "かしこまりました。十分ほどお待ちください。(Kashikomarimashita. Juppun hodo omachi kudasai.)", cn: "好的，请稍等十分钟。(Hǎo de, qǐng shāo děng shí fēnzhōng.)" }
+                        ]
+                    },
+                    {
+                        title: "Đi chợ mua thực phẩm",
+                        lines: [
+                            { sp: "Người mua", vi: "Chị ơi, táo này bao nhiêu một cân?", en: "Excuse me, how much are these apples per kilo?", jp: "すみません、このりんごは一キロいくらですか。(Sumimasen, kono ringo wa ichi kiro ikura desu ka.)", cn: "请问，这苹果多少钱一斤？(Qǐngwèn, zhè píngguǒ duōshǎo qián yì jīn?)" },
+                            { sp: "Người bán", vi: "Sáu mươi nghìn một cân, ngọt lắm em.", en: "Sixty thousand a kilo, they're very sweet.", jp: "一キロ六万ドンです。とても甘いですよ。(Ichi kiro rokuman don desu. Totemo amai desu yo.)", cn: "六万盾一斤，很甜的。(Liù wàn dùn yì jīn, hěn tián de.)" },
+                            { sp: "Người mua", vi: "Cho em hai cân, và thêm ít rau nữa.", en: "Two kilos please, and some vegetables too.", jp: "二キロと、野菜も少しください。(Ni kiro to, yasai mo sukoshi kudasai.)", cn: "给我两斤，再来点蔬菜。(Gěi wǒ liǎng jīn, zài lái diǎn shūcài.)" },
+                            { sp: "Người bán", vi: "Tất cả là một trăm năm mươi nghìn.", en: "That's one hundred and fifty thousand in total.", jp: "全部で十五万ドンです。(Zenbu de jūgoman don desu.)", cn: "一共十五万盾。(Yígòng shíwǔ wàn dùn.)" }
+                        ]
+                    }
+                ]
+            },
+            tinhtu: {
+                sentences: [
+                    { vi: "Chiếc áo này đắt quá, có cái nào rẻ hơn không?", en: "This shirt is too expensive; do you have a cheaper one?", jp: "この服は高すぎます。もっと安いのはありますか。(Kono fuku wa takasugimasu. Motto yasui no wa arimasu ka.)", cn: "这件衣服太贵了，有便宜一点的吗？(Zhè jiàn yīfu tài guì le, yǒu piányi yìdiǎn de ma?)" },
+                    { vi: "Hôm nay tôi rất bận.", en: "I'm very busy today.", jp: "今日はとても忙しいです。(Kyō wa totemo isogashii desu.)", cn: "我今天很忙。(Wǒ jīntiān hěn máng.)" },
+                    { vi: "Tiếng Nhật khó nhưng rất thú vị.", en: "Japanese is difficult but very interesting.", jp: "日本語は難しいですが、面白いです。(Nihongo wa muzukashii desu ga, omoshiroi desu.)", cn: "日语很难，但是很有意思。(Rìyǔ hěn nán, dànshì hěn yǒu yìsi.)" },
+                    { vi: "Phòng này vừa rộng vừa sạch sẽ.", en: "This room is both spacious and clean.", jp: "この部屋は広くてきれいです。(Kono heya wa hirokute kirei desu.)", cn: "这个房间又大又干净。(Zhège fángjiān yòu dà yòu gānjìng.)" },
+                    { vi: "Trời hôm nay lạnh hơn hôm qua.", en: "Today is colder than yesterday.", jp: "今日は昨日より寒いです。(Kyō wa kinō yori samui desu.)", cn: "今天比昨天冷。(Jīntiān bǐ zuótiān lěng.)" },
+                    { vi: "Chiếc xe mới này chạy rất nhanh.", en: "This new car runs very fast.", jp: "この新しい車はとても速いです。(Kono atarashii kuruma wa totemo hayai desu.)", cn: "这辆新车跑得很快。(Zhè liàng xīn chē pǎo de hěn kuài.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Nhận xét về món ăn",
+                        lines: [
+                            { sp: "A", vi: "Món này thế nào?", en: "How is this dish?", jp: "この料理はどうですか。(Kono ryōri wa dō desu ka.)", cn: "这道菜怎么样？(Zhè dào cài zěnmeyàng?)" },
+                            { sp: "B", vi: "Rất ngon, nhưng hơi mặn một chút.", en: "Very tasty, but a little salty.", jp: "とてもおいしいですが、少ししょっぱいです。(Totemo oishii desu ga, sukoshi shoppai desu.)", cn: "很好吃，不过有点咸。(Hěn hǎochī, búguò yǒudiǎn xián.)" },
+                            { sp: "A", vi: "Còn giá cả thì sao?", en: "What about the price?", jp: "値段はどうですか。(Nedan wa dō desu ka.)", cn: "价格怎么样？(Jiàgé zěnmeyàng?)" },
+                            { sp: "B", vi: "Khá rẻ so với chất lượng.", en: "Quite cheap for the quality.", jp: "味の割に安いです。(Aji no wari ni yasui desu.)", cn: "跟质量比起来挺便宜的。(Gēn zhìliàng bǐ qǐlái tǐng piányi de.)" }
+                        ]
+                    },
+                    {
+                        title: "Nói về thời tiết và tâm trạng",
+                        lines: [
+                            { sp: "A", vi: "Sao trông bạn buồn vậy?", en: "Why do you look so sad?", jp: "どうして悲しそうな顔をしているの。(Dōshite kanashisō na kao o shiteiru no.)", cn: "你怎么看起来这么难过？(Nǐ zěnme kàn qǐlái zhème nánguò?)" },
+                            { sp: "B", vi: "Vì hôm nay trời mưa và tôi rất mệt.", en: "Because it's raining today and I'm very tired.", jp: "今日は雨だし、とても疲れているからです。(Kyō wa ame dashi, totemo tsukareteiru kara desu.)", cn: "因为今天下雨，我也很累。(Yīnwèi jīntiān xiàyǔ, wǒ yě hěn lèi.)" },
+                            { sp: "A", vi: "Ngày mai trời sẽ đẹp, đừng lo.", en: "The weather will be nice tomorrow, don't worry.", jp: "明日はいい天気になりますよ。心配しないで。(Ashita wa ii tenki ni narimasu yo. Shinpai shinaide.)", cn: "明天天气会很好，别担心。(Míngtiān tiānqì huì hěn hǎo, bié dānxīn.)" },
+                            { sp: "B", vi: "Cảm ơn bạn, tôi thấy vui hơn rồi.", en: "Thank you, I feel happier now.", jp: "ありがとう、元気が出ました。(Arigatō, genki ga demashita.)", cn: "谢谢你，我开心多了。(Xièxie nǐ, wǒ kāixīn duō le.)" }
+                        ]
+                    }
+                ]
+            },
+            dongtu: {
+                sentences: [
+                    { vi: "Bạn có thể giúp tôi một chút được không?", en: "Could you help me for a moment?", jp: "ちょっと手伝ってもらえますか。(Chotto tetsudatte moraemasu ka.)", cn: "你能帮我一下吗？(Nǐ néng bāng wǒ yíxià ma?)" },
+                    { vi: "Tôi đang học tiếng Trung.", en: "I am studying Chinese.", jp: "中国語を勉強しています。(Chūgokugo o benkyō shiteimasu.)", cn: "我在学中文。(Wǒ zài xué Zhōngwén.)" },
+                    { vi: "Xin hãy đợi tôi ở đây.", en: "Please wait for me here.", jp: "ここで待っていてください。(Koko de matte ite kudasai.)", cn: "请在这里等我。(Qǐng zài zhèlǐ děng wǒ.)" },
+                    { vi: "Tôi không hiểu, xin nói chậm lại.", en: "I don't understand; please speak more slowly.", jp: "分かりません。ゆっくり話してください。(Wakarimasen. Yukkuri hanashite kudasai.)", cn: "我不明白，请说慢一点。(Wǒ bù míngbai, qǐng shuō màn yìdiǎn.)" },
+                    { vi: "Chiều nay chúng ta gặp nhau nhé.", en: "Let's meet this afternoon.", jp: "今日の午後会いましょう。(Kyō no gogo aimashō.)", cn: "我们今天下午见面吧。(Wǒmen jīntiān xiàwǔ jiànmiàn ba.)" },
+                    { vi: "Mỗi sáng tôi chạy bộ 30 phút.", en: "I jog for 30 minutes every morning.", jp: "毎朝三十分走っています。(Maiasa sanjuppun hashitteimasu.)", cn: "我每天早上跑步三十分钟。(Wǒ měitiān zǎoshang pǎobù sānshí fēnzhōng.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Rủ bạn đi chơi",
+                        lines: [
+                            { sp: "A", vi: "Tối nay bạn làm gì?", en: "What are you doing tonight?", jp: "今晩何をしますか。(Konban nani o shimasu ka.)", cn: "你今晚做什么？(Nǐ jīnwǎn zuò shénme?)" },
+                            { sp: "B", vi: "Tôi chưa có kế hoạch gì.", en: "I don't have any plans yet.", jp: "まだ予定はありません。(Mada yotei wa arimasen.)", cn: "我还没有安排。(Wǒ hái méiyǒu ānpái.)" },
+                            { sp: "A", vi: "Vậy đi xem phim với tôi nhé?", en: "Then would you go see a movie with me?", jp: "じゃあ、一緒に映画を見に行きませんか。(Jā, issho ni eiga o mi ni ikimasen ka.)", cn: "那跟我一起去看电影吧？(Nà gēn wǒ yìqǐ qù kàn diànyǐng ba?)" },
+                            { sp: "B", vi: "Được, mấy giờ gặp nhau?", en: "Sure, what time shall we meet?", jp: "いいですね。何時に会いますか。(Ii desu ne. Nanji ni aimasu ka.)", cn: "好啊，几点见？(Hǎo a, jǐ diǎn jiàn?)" },
+                            { sp: "A", vi: "Bảy giờ, trước rạp chiếu phim.", en: "Seven o'clock, in front of the cinema.", jp: "七時に映画館の前で。(Shichiji ni eigakan no mae de.)", cn: "七点，在电影院门口。(Qī diǎn, zài diànyǐngyuàn ménkǒu.)" }
+                        ]
+                    },
+                    {
+                        title: "Nhờ người khác giúp đỡ",
+                        lines: [
+                            { sp: "A", vi: "Xin lỗi, bạn có thể giúp tôi mang cái này không?", en: "Excuse me, could you help me carry this?", jp: "すみません、これを運ぶのを手伝ってくれませんか。(Sumimasen, kore o hakobu no o tetsudatte kuremasen ka.)", cn: "不好意思，你能帮我搬一下这个吗？(Bù hǎoyìsi, nǐ néng bāng wǒ bān yíxià zhège ma?)" },
+                            { sp: "B", vi: "Được chứ, để tôi giúp.", en: "Of course, let me help you.", jp: "もちろんです。手伝います。(Mochiron desu. Tetsudaimasu.)", cn: "当然可以，我来帮你。(Dāngrán kěyǐ, wǒ lái bāng nǐ.)" },
+                            { sp: "A", vi: "Cảm ơn bạn rất nhiều.", en: "Thank you so much.", jp: "本当にありがとうございます。(Hontō ni arigatō gozaimasu.)", cn: "太感谢你了。(Tài gǎnxiè nǐ le.)" },
+                            { sp: "B", vi: "Không có gì đâu.", en: "You're welcome.", jp: "どういたしまして。(Dō itashimashite.)", cn: "不客气。(Bú kèqi.)" }
+                        ]
+                    }
+                ]
+            },
+            trangphuc: {
+                sentences: [
+                    { vi: "Tôi muốn thử chiếc áo khoác này.", en: "I'd like to try on this jacket.", jp: "このジャケットを試着したいです。(Kono jaketto o shichaku shitai desu.)", cn: "我想试一下这件外套。(Wǒ xiǎng shì yíxià zhè jiàn wàitào.)" },
+                    { vi: "Đôi giày này hơi chật.", en: "These shoes are a bit tight.", jp: "この靴は少しきついです。(Kono kutsu wa sukoshi kitsui desu.)", cn: "这双鞋有点紧。(Zhè shuāng xié yǒudiǎn jǐn.)" },
+                    { vi: "Hôm nay bạn đeo cà vạt rất đẹp.", en: "Your tie looks great today.", jp: "今日のネクタイ、素敵ですね。(Kyō no nekutai, suteki desu ne.)", cn: "你今天的领带很好看。(Nǐ jīntiān de lǐngdài hěn hǎokàn.)" },
+                    { vi: "Trời lạnh, nhớ mặc thêm áo ấm.", en: "It's cold; remember to wear something warm.", jp: "寒いので、暖かい服を着てください。(Samui node, atatakai fuku o kite kudasai.)", cn: "天冷，记得多穿件厚衣服。(Tiān lěng, jìde duō chuān jiàn hòu yīfu.)" },
+                    { vi: "Chiếc váy này có màu khác không?", en: "Does this skirt come in another color?", jp: "このスカートは他の色がありますか。(Kono sukāto wa hoka no iro ga arimasu ka.)", cn: "这条裙子有别的颜色吗？(Zhè tiáo qúnzi yǒu bié de yánsè ma?)" },
+                    { vi: "Tôi quên mang kính mắt rồi.", en: "I forgot to bring my glasses.", jp: "眼鏡を持ってくるのを忘れました。(Megane o motte kuru no o wasuremashita.)", cn: "我忘记带眼镜了。(Wǒ wàngjì dài yǎnjìng le.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Mua quần áo",
+                        lines: [
+                            { sp: "Nhân viên", vi: "Chào chị, chị cần tìm gì ạ?", en: "Hello, what are you looking for?", jp: "いらっしゃいませ。何をお探しですか。(Irasshaimase. Nani o osagashi desu ka.)", cn: "您好，请问您想看点什么？(Nín hǎo, qǐngwèn nín xiǎng kàn diǎn shénme?)" },
+                            { sp: "Khách", vi: "Tôi muốn mua một chiếc áo sơ mi trắng.", en: "I want to buy a white shirt.", jp: "白いシャツを買いたいです。(Shiroi shatsu o kaitai desu.)", cn: "我想买一件白衬衫。(Wǒ xiǎng mǎi yí jiàn bái chènshān.)" },
+                            { sp: "Nhân viên", vi: "Chị mặc cỡ nào ạ?", en: "What size do you wear?", jp: "サイズはいくつですか。(Saizu wa ikutsu desu ka.)", cn: "您穿什么号？(Nín chuān shénme hào?)" },
+                            { sp: "Khách", vi: "Cỡ M. Tôi thử được không?", en: "Size M. May I try it on?", jp: "Mサイズです。試着してもいいですか。(Emu saizu desu. Shichaku shite mo ii desu ka.)", cn: "M号。我可以试穿吗？(M hào. Wǒ kěyǐ shìchuān ma?)" },
+                            { sp: "Nhân viên", vi: "Được ạ, phòng thử đồ ở bên kia.", en: "Of course, the fitting room is over there.", jp: "どうぞ、試着室はあちらです。(Dōzo, shichakushitsu wa achira desu.)", cn: "可以，试衣间在那边。(Kěyǐ, shìyījiān zài nàbiān.)" }
+                        ]
+                    },
+                    {
+                        title: "Chuẩn bị đi dự tiệc",
+                        lines: [
+                            { sp: "A", vi: "Tối nay mình nên mặc gì nhỉ?", en: "What should I wear tonight?", jp: "今晩何を着たらいいかな。(Konban nani o kitara ii kana.)", cn: "今晚我该穿什么？(Jīnwǎn wǒ gāi chuān shénme?)" },
+                            { sp: "B", vi: "Bạn mặc váy đen đi, rất hợp.", en: "Wear the black dress, it suits you well.", jp: "黒いワンピースがいいと思うよ。よく似合う。(Kuroi wanpīsu ga ii to omou yo. Yoku niau.)", cn: "你穿黑色的裙子吧，很合适。(Nǐ chuān hēisè de qúnzi ba, hěn héshì.)" },
+                            { sp: "A", vi: "Thế còn giày thì sao?", en: "And what about shoes?", jp: "靴はどうする。(Kutsu wa dō suru.)", cn: "那鞋子呢？(Nà xiézi ne?)" },
+                            { sp: "B", vi: "Đi giày cao gót màu đen là đẹp nhất.", en: "Black high heels would look best.", jp: "黒いハイヒールが一番いいよ。(Kuroi haihīru ga ichiban ii yo.)", cn: "穿黑色高跟鞋最好看。(Chuān hēisè gāogēnxié zuì hǎokàn.)" }
+                        ]
+                    }
+                ]
+            },
+            amnhac: {
+                sentences: [
+                    { vi: "Ca sĩ này hát rất hay.", en: "This singer sings very well.", jp: "この歌手はとても歌が上手です。(Kono kashu wa totemo uta ga jōzu desu.)", cn: "这个歌手唱得很好。(Zhège gēshǒu chàng de hěn hǎo.)" },
+                    { vi: "Tôi học đàn piano từ nhỏ.", en: "I have played the piano since I was little.", jp: "子供の頃からピアノを習っています。(Kodomo no koro kara piano o naratteimasu.)", cn: "我从小就学钢琴。(Wǒ cóngxiǎo jiù xué gāngqín.)" },
+                    { vi: "Giai điệu bài hát này rất dễ nhớ.", en: "The melody of this song is easy to remember.", jp: "この曲のメロディーは覚えやすいです。(Kono kyoku no merodī wa oboeyasui desu.)", cn: "这首歌的旋律很好记。(Zhè shǒu gē de xuánlǜ hěn hǎo jì.)" },
+                    { vi: "Cuối tuần có một buổi hòa nhạc ở công viên.", en: "There is a concert in the park this weekend.", jp: "週末に公園でコンサートがあります。(Shūmatsu ni kōen de konsāto ga arimasu.)", cn: "周末公园有一场音乐会。(Zhōumò gōngyuán yǒu yì chǎng yīnyuèhuì.)" },
+                    { vi: "Bạn cho tôi mượn tai nghe được không?", en: "Can I borrow your headphones?", jp: "イヤホンを貸してもらえますか。(Iyahon o kashite moraemasu ka.)", cn: "能借我用一下耳机吗？(Néng jiè wǒ yòng yíxià ěrjī ma?)" },
+                    { vi: "Tôi không nhớ lời bài hát này.", en: "I don't remember the lyrics of this song.", jp: "この歌の歌詞を覚えていません。(Kono uta no kashi o oboeteimasen.)", cn: "我记不住这首歌的歌词。(Wǒ jì bu zhù zhè shǒu gē de gēcí.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Nói về sở thích âm nhạc",
+                        lines: [
+                            { sp: "A", vi: "Bạn thích nghe loại nhạc nào?", en: "What kind of music do you like?", jp: "どんな音楽が好きですか。(Donna ongaku ga suki desu ka.)", cn: "你喜欢听什么样的音乐？(Nǐ xǐhuān tīng shénme yàng de yīnyuè?)" },
+                            { sp: "B", vi: "Tôi thích nhạc nhẹ và nhạc không lời.", en: "I like soft music and instrumental music.", jp: "バラードや器楽曲が好きです。(Barādo ya kigakkyoku ga suki desu.)", cn: "我喜欢轻音乐和纯音乐。(Wǒ xǐhuān qīngyīnyuè hé chúnyīnyuè.)" },
+                            { sp: "A", vi: "Bạn có biết chơi nhạc cụ nào không?", en: "Can you play any instrument?", jp: "何か楽器が弾けますか。(Nanika gakki ga hikemasu ka.)", cn: "你会弹什么乐器吗？(Nǐ huì tán shénme yuèqì ma?)" },
+                            { sp: "B", vi: "Tôi biết chơi guitar một chút.", en: "I can play the guitar a little.", jp: "ギターが少し弾けます。(Gitā ga sukoshi hikemasu.)", cn: "我会弹一点吉他。(Wǒ huì tán yìdiǎn jítā.)" },
+                            { sp: "A", vi: "Hôm nào đàn cho tôi nghe với nhé.", en: "Play for me someday.", jp: "今度聞かせてください。(Kondo kikasete kudasai.)", cn: "改天弹给我听吧。(Gǎitiān tán gěi wǒ tīng ba.)" }
+                        ]
+                    },
+                    {
+                        title: "Rủ đi xem hòa nhạc",
+                        lines: [
+                            { sp: "A", vi: "Thứ Bảy này có buổi hòa nhạc, bạn đi không?", en: "There's a concert this Saturday. Do you want to go?", jp: "土曜日にコンサートがありますが、行きませんか。(Doyōbi ni konsāto ga arimasu ga, ikimasen ka.)", cn: "这周六有音乐会，你去吗？(Zhè zhōuliù yǒu yīnyuèhuì, nǐ qù ma?)" },
+                            { sp: "B", vi: "Nghe hay đấy. Vé bao nhiêu tiền?", en: "Sounds good. How much is a ticket?", jp: "いいですね。チケットはいくらですか。(Ii desu ne. Chiketto wa ikura desu ka.)", cn: "听起来不错。票多少钱？(Tīng qǐlái búcuò. Piào duōshǎo qián?)" },
+                            { sp: "A", vi: "Hai trăm nghìn một vé.", en: "Two hundred thousand per ticket.", jp: "一枚二十万ドンです。(Ichimai nijūman don desu.)", cn: "一张二十万盾。(Yì zhāng èrshí wàn dùn.)" },
+                            { sp: "B", vi: "Được, bạn đặt giúp tôi một vé nhé.", en: "Okay, please book one for me.", jp: "じゃあ、一枚予約してください。(Jā, ichimai yoyaku shite kudasai.)", cn: "好，帮我订一张吧。(Hǎo, bāng wǒ dìng yì zhāng ba.)" }
+                        ]
+                    }
+                ]
+            },
+            thethao: {
+                sentences: [
+                    { vi: "Tôi tập bơi hai lần một tuần.", en: "I swim twice a week.", jp: "週に二回水泳をしています。(Shū ni nikai suiei o shiteimasu.)", cn: "我一周游泳两次。(Wǒ yì zhōu yóuyǒng liǎng cì.)" },
+                    { vi: "Đội nào đã thắng trận đấu hôm qua?", en: "Which team won yesterday's match?", jp: "昨日の試合はどちらが勝ちましたか。(Kinō no shiai wa dochira ga kachimashita ka.)", cn: "昨天的比赛哪个队赢了？(Zuótiān de bǐsài nǎge duì yíng le?)" },
+                    { vi: "Chúng ta đi đánh cầu lông nhé.", en: "Let's go play badminton.", jp: "バドミントンをしに行きましょう。(Badominton o shi ni ikimashō.)", cn: "我们去打羽毛球吧。(Wǒmen qù dǎ yǔmáoqiú ba.)" },
+                    { vi: "Tôi bị đau chân khi chạy.", en: "My leg hurts when I run.", jp: "走ると足が痛くなります。(Hashiru to ashi ga itaku narimasu.)", cn: "我跑步的时候腿疼。(Wǒ pǎobù de shíhòu tuǐ téng.)" },
+                    { vi: "Sân bóng rổ ở phía sau trường.", en: "The basketball court is behind the school.", jp: "バスケットコートは学校の裏にあります。(Basuketto kōto wa gakkō no ura ni arimasu.)", cn: "篮球场在学校后面。(Lánqiúchǎng zài xuéxiào hòumiàn.)" },
+                    { vi: "Tập thể thao mỗi ngày rất tốt cho sức khỏe.", en: "Exercising every day is very good for your health.", jp: "毎日運動するのは健康にいいです。(Mainichi undō suru no wa kenkō ni ii desu.)", cn: "每天运动对身体很好。(Měitiān yùndòng duì shēntǐ hěn hǎo.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Rủ nhau chơi thể thao",
+                        lines: [
+                            { sp: "A", vi: "Chiều nay đi đá bóng không?", en: "Do you want to play soccer this afternoon?", jp: "今日の午後サッカーをしませんか。(Kyō no gogo sakkā o shimasen ka.)", cn: "今天下午去踢足球吗？(Jīntiān xiàwǔ qù tī zúqiú ma?)" },
+                            { sp: "B", vi: "Mấy giờ và ở đâu?", en: "What time and where?", jp: "何時にどこでですか。(Nanji ni doko de desu ka.)", cn: "几点？在哪儿？(Jǐ diǎn? Zài nǎr?)" },
+                            { sp: "A", vi: "Năm giờ, ở sân gần nhà văn hóa.", en: "Five o'clock, at the field near the culture house.", jp: "五時に、文化会館の近くのグラウンドで。(Goji ni, bunka kaikan no chikaku no guraundo de.)", cn: "五点，在文化馆附近的球场。(Wǔ diǎn, zài wénhuàguǎn fùjìn de qiúchǎng.)" },
+                            { sp: "B", vi: "Được, tôi sẽ mang bóng theo.", en: "Okay, I'll bring the ball.", jp: "分かりました。ボールを持っていきます。(Wakarimashita. Bōru o motte ikimasu.)", cn: "好，我带球过去。(Hǎo, wǒ dài qiú guòqù.)" }
+                        ]
+                    },
+                    {
+                        title: "Trò chuyện ở phòng tập",
+                        lines: [
+                            { sp: "A", vi: "Bạn tập ở đây lâu chưa?", en: "Have you been training here long?", jp: "ここに長く通っていますか。(Koko ni nagaku kayotteimasu ka.)", cn: "你在这里练很久了吗？(Nǐ zài zhèlǐ liàn hěn jiǔ le ma?)" },
+                            { sp: "B", vi: "Khoảng nửa năm rồi.", en: "About half a year now.", jp: "半年ぐらいです。(Hantoshi gurai desu.)", cn: "大概半年了。(Dàgài bànnián le.)" },
+                            { sp: "A", vi: "Mỗi tuần bạn tập mấy buổi?", en: "How many sessions a week do you do?", jp: "週に何回運動しますか。(Shū ni nankai undō shimasu ka.)", cn: "你一周练几次？(Nǐ yì zhōu liàn jǐ cì?)" },
+                            { sp: "B", vi: "Ba buổi, chủ yếu là chạy bộ và bơi.", en: "Three, mostly running and swimming.", jp: "三回です。主にランニングと水泳です。(Sankai desu. Omo ni ranningu to suiei desu.)", cn: "三次，主要是跑步和游泳。(Sān cì, zhǔyào shì pǎobù hé yóuyǒng.)" }
+                        ]
+                    }
+                ]
+            },
+            hoccu: {
+                sentences: [
+                    { vi: "Tôi quên mang sách giáo khoa rồi.", en: "I forgot to bring my textbook.", jp: "教科書を持ってくるのを忘れました。(Kyōkasho o motte kuru no o wasuremashita.)", cn: "我忘带课本了。(Wǒ wàng dài kèběn le.)" },
+                    { vi: "Hãy viết vào vở của bạn.", en: "Please write it in your notebook.", jp: "ノートに書いてください。(Nōto ni kaite kudasai.)", cn: "请写在你的本子上。(Qǐng xiě zài nǐ de běnzi shàng.)" },
+                    { vi: "Cặp sách của tôi nặng quá.", en: "My school bag is too heavy.", jp: "私のかばんは重すぎます。(Watashi no kaban wa omosugimasu.)", cn: "我的书包太重了。(Wǒ de shūbāo tài zhòng le.)" },
+                    { vi: "Thầy giáo đang viết trên bảng đen.", en: "The teacher is writing on the blackboard.", jp: "先生が黒板に書いています。(Sensei ga kokuban ni kaiteimasu.)", cn: "老师正在黑板上写字。(Lǎoshī zhèngzài hēibǎn shàng xiě zì.)" },
+                    { vi: "Bạn có thước kẻ không?", en: "Do you have a ruler?", jp: "定規を持っていますか。(Jōgi o motteimasu ka.)", cn: "你有尺子吗？(Nǐ yǒu chǐzi ma?)" },
+                    { vi: "Tôi tra từ mới trong từ điển.", en: "I look up new words in the dictionary.", jp: "辞書で新しい単語を調べます。(Jisho de atarashii tango o shirabemasu.)", cn: "我用词典查生词。(Wǒ yòng cídiǎn chá shēngcí.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Mượn đồ trong lớp",
+                        lines: [
+                            { sp: "A", vi: "Cho mình mượn cây bút chì được không?", en: "Can I borrow a pencil?", jp: "鉛筆を貸してくれる？(Enpitsu o kashite kureru?)", cn: "能借我一支铅笔吗？(Néng jiè wǒ yì zhī qiānbǐ ma?)" },
+                            { sp: "B", vi: "Được, trong hộp bút của mình còn hai cây.", en: "Sure, I have two left in my pencil case.", jp: "いいよ、筆箱に二本あるよ。(Ii yo, fudebako ni nihon aru yo.)", cn: "可以，我笔袋里还有两支。(Kěyǐ, wǒ bǐdài lǐ hái yǒu liǎng zhī.)" },
+                            { sp: "A", vi: "Cảm ơn nhé, mình sẽ trả sau giờ học.", en: "Thanks, I'll return it after class.", jp: "ありがとう。授業の後で返すね。(Arigatō. Jugyō no ato de kaesu ne.)", cn: "谢谢，下课后还你。(Xièxie, xiàkè hòu huán nǐ.)" },
+                            { sp: "B", vi: "Không cần vội đâu.", en: "No rush at all.", jp: "急がなくていいよ。(Isoganakute ii yo.)", cn: "不着急。(Bù zháojí.)" }
+                        ]
+                    },
+                    {
+                        title: "Mua đồ dùng học tập",
+                        lines: [
+                            { sp: "Khách", vi: "Tôi muốn mua một quyển từ điển Nhật - Việt.", en: "I'd like to buy a Japanese-Vietnamese dictionary.", jp: "日越辞書を買いたいです。(Nichi-Etsu jisho o kaitai desu.)", cn: "我想买一本日越词典。(Wǒ xiǎng mǎi yì běn Rì-Yuè cídiǎn.)" },
+                            { sp: "Nhân viên", vi: "Loại này giá 250 nghìn, có kèm phiên âm ạ.", en: "This one is 250,000 and includes pronunciation.", jp: "こちらは二十五万ドンで、発音付きです。(Kochira wa nijūgoman don de, hatsuon tsuki desu.)", cn: "这本二十五万盾，带注音。(Zhè běn èrshíwǔ wàn dùn, dài zhùyīn.)" },
+                            { sp: "Khách", vi: "Tốt quá. Cho tôi thêm ba quyển vở nữa.", en: "Great. Three notebooks as well, please.", jp: "いいですね。ノートも三冊ください。(Ii desu ne. Nōto mo sansatsu kudasai.)", cn: "太好了。再给我三本本子。(Tài hǎo le. Zài gěi wǒ sān běn běnzi.)" },
+                            { sp: "Nhân viên", vi: "Vâng, tổng cộng 310 nghìn ạ.", en: "Sure, that's 310,000 in total.", jp: "はい、全部で三十一万ドンです。(Hai, zenbu de sanjūichiman don desu.)", cn: "好的，一共三十一万盾。(Hǎo de, yígòng sānshíyī wàn dùn.)" }
+                        ]
+                    }
+                ]
+            },
+            diadiem: {
+                sentences: [
+                    { vi: "Sở thú mở cửa lúc mấy giờ?", en: "What time does the zoo open?", jp: "動物園は何時に開きますか。(Dōbutsuen wa nanji ni akimasu ka.)", cn: "动物园几点开门？(Dòngwùyuán jǐ diǎn kāimén?)" },
+                    { vi: "Công viên này rất rộng và mát mẻ.", en: "This park is very large and cool.", jp: "この公園は広くて涼しいです。(Kono kōen wa hirokute suzushii desu.)", cn: "这个公园又大又凉快。(Zhège gōngyuán yòu dà yòu liángkuai.)" },
+                    { vi: "Chúng ta uống cà phê ở đây nhé.", en: "Let's have coffee here.", jp: "ここでコーヒーを飲みましょう。(Koko de kōhī o nomimashō.)", cn: "我们在这里喝杯咖啡吧。(Wǒmen zài zhèlǐ hē bēi kāfēi ba.)" },
+                    { vi: "Trong thủy cung có rất nhiều loài cá.", en: "There are many kinds of fish in the aquarium.", jp: "水族館にはたくさんの魚がいます。(Suizokukan ni wa takusan no sakana ga imasu.)", cn: "水族馆里有很多种鱼。(Shuǐzúguǎn lǐ yǒu hěn duō zhǒng yú.)" },
+                    { vi: "Lâu đài này được xây từ 300 năm trước.", en: "This castle was built 300 years ago.", jp: "この城は三百年前に建てられました。(Kono shiro wa sanbyakunen mae ni tateraremashita.)", cn: "这座城堡是三百年前建的。(Zhè zuò chéngbǎo shì sānbǎi nián qián jiàn de.)" },
+                    { vi: "Cuối tuần công viên giải trí rất đông người.", en: "The amusement park is crowded on weekends.", jp: "週末の遊園地はとても混んでいます。(Shūmatsu no yūenchi wa totemo kondeimasu.)", cn: "周末游乐园人很多。(Zhōumò yóulèyuán rén hěn duō.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Lên kế hoạch cuối tuần",
+                        lines: [
+                            { sp: "A", vi: "Cuối tuần này mình đi đâu chơi nhỉ?", en: "Where should we go this weekend?", jp: "今週末どこへ遊びに行こうか。(Konshūmatsu doko e asobi ni ikō ka.)", cn: "这个周末我们去哪儿玩？(Zhège zhōumò wǒmen qù nǎr wán?)" },
+                            { sp: "B", vi: "Đi sở thú đi, lâu rồi mình chưa đi.", en: "Let's go to the zoo; we haven't been in a while.", jp: "動物園に行こうよ。久しぶりだし。(Dōbutsuen ni ikō yo. Hisashiburi dashi.)", cn: "去动物园吧，好久没去了。(Qù dòngwùyuán ba, hǎojiǔ méi qù le.)" },
+                            { sp: "A", vi: "Nghe được đấy. Mấy giờ đi?", en: "Sounds good. What time shall we go?", jp: "いいね。何時に行く？(Ii ne. Nanji ni iku?)", cn: "不错。几点去？(Búcuò. Jǐ diǎn qù?)" },
+                            { sp: "B", vi: "Tám giờ sáng, đi sớm cho mát.", en: "Eight in the morning, early while it's still cool.", jp: "朝八時。早く行けば涼しいよ。(Asa hachiji. Hayaku ikeba suzushii yo.)", cn: "早上八点，早点去凉快。(Zǎoshang bā diǎn, zǎodiǎn qù liángkuai.)" }
+                        ]
+                    },
+                    {
+                        title: "Ở quán cà phê",
+                        lines: [
+                            { sp: "Nhân viên", vi: "Anh chị muốn ngồi trong nhà hay ngoài sân ạ?", en: "Would you like to sit inside or outside?", jp: "店内と外、どちらがいいですか。(Tennai to soto, dochira ga ii desu ka.)", cn: "你们想坐里面还是外面？(Nǐmen xiǎng zuò lǐmiàn háishi wàimiàn?)" },
+                            { sp: "Khách", vi: "Ngồi ngoài sân đi, cảnh đẹp hơn.", en: "Outside, please — the view is nicer.", jp: "外にしましょう。景色がいいから。(Soto ni shimashō. Keshiki ga ii kara.)", cn: "坐外面吧，风景更好。(Zuò wàimiàn ba, fēngjǐng gèng hǎo.)" },
+                            { sp: "Nhân viên", vi: "Anh chị uống gì ạ?", en: "What would you like to drink?", jp: "何を飲みますか。(Nani o nomimasu ka.)", cn: "你们喝什么？(Nǐmen hē shénme?)" },
+                            { sp: "Khách", vi: "Một ly cà phê sữa đá, cảm ơn.", en: "An iced milk coffee, thank you.", jp: "アイスミルクコーヒーを一つお願いします。(Aisu miruku kōhī o hitotsu onegai shimasu.)", cn: "一杯冰牛奶咖啡，谢谢。(Yì bēi bīng niúnǎi kāfēi, xièxie.)" }
+                        ]
+                    }
+                ]
+            },
+            dongvat: {
+                sentences: [
+                    { vi: "Con chó này rất thân thiện.", en: "This dog is very friendly.", jp: "この犬はとても人懐っこいです。(Kono inu wa totemo hitonatsukkoi desu.)", cn: "这只狗很亲人。(Zhè zhī gǒu hěn qīnrén.)" },
+                    { vi: "Bạn có nuôi thú cưng không?", en: "Do you have any pets?", jp: "ペットを飼っていますか。(Petto o katteimasu ka.)", cn: "你养宠物吗？(Nǐ yǎng chǒngwù ma?)" },
+                    { vi: "Con hổ là loài vật nguy hiểm.", en: "The tiger is a dangerous animal.", jp: "虎は危険な動物です。(Tora wa kiken na dōbutsu desu.)", cn: "老虎是危险的动物。(Lǎohǔ shì wēixiǎn de dòngwù.)" },
+                    { vi: "Buổi sáng chim hót rất hay.", en: "Birds sing beautifully in the morning.", jp: "朝、鳥がきれいに鳴きます。(Asa, tori ga kirei ni nakimasu.)", cn: "早上鸟叫得很好听。(Zǎoshang niǎo jiào de hěn hǎotīng.)" },
+                    { vi: "Đừng cho động vật ăn ở sở thú.", en: "Don't feed the animals at the zoo.", jp: "動物園で動物に餌をあげないでください。(Dōbutsuen de dōbutsu ni esa o agenaide kudasai.)", cn: "请不要在动物园给动物喂食。(Qǐng bú yào zài dòngwùyuán gěi dòngwù wèishí.)" },
+                    { vi: "Con mèo đang ngủ trên ghế sofa.", en: "The cat is sleeping on the sofa.", jp: "猫がソファで寝ています。(Neko ga sofa de neteimasu.)", cn: "猫在沙发上睡觉。(Māo zài shāfā shàng shuìjiào.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Nói về thú cưng",
+                        lines: [
+                            { sp: "A", vi: "Nhà bạn nuôi con gì?", en: "What pets do you have at home?", jp: "家では何を飼っていますか。(Ie de wa nani o katteimasu ka.)", cn: "你家养什么宠物？(Nǐ jiā yǎng shénme chǒngwù?)" },
+                            { sp: "B", vi: "Mình nuôi một con mèo và hai con cá.", en: "I have a cat and two fish.", jp: "猫一匹と魚二匹を飼っています。(Neko ippiki to sakana nihiki o katteimasu.)", cn: "我养了一只猫和两条鱼。(Wǒ yǎng le yì zhī māo hé liǎng tiáo yú.)" },
+                            { sp: "A", vi: "Con mèo tên là gì?", en: "What's the cat's name?", jp: "猫の名前は何ですか。(Neko no namae wa nan desu ka.)", cn: "猫叫什么名字？(Māo jiào shénme míngzi?)" },
+                            { sp: "B", vi: "Tên là Mun, nó rất ngoan.", en: "Its name is Mun; it's very well-behaved.", jp: "ムンといいます。とてもおとなしいです。(Mun to iimasu. Totemo otonashii desu.)", cn: "它叫小黑，很乖。(Tā jiào Xiǎohēi, hěn guāi.)" }
+                        ]
+                    },
+                    {
+                        title: "Đi sở thú cùng con",
+                        lines: [
+                            { sp: "Con", vi: "Con muốn xem con voi trước ạ.", en: "I want to see the elephant first.", jp: "まず象が見たいです。(Mazu zō ga mitai desu.)", cn: "我想先看大象。(Wǒ xiǎng xiān kàn dàxiàng.)" },
+                            { sp: "Mẹ", vi: "Được, chuồng voi ở bên trái.", en: "Okay, the elephant enclosure is on the left.", jp: "いいよ。象舎は左だよ。(Ii yo. Zōsha wa hidari da yo.)", cn: "好，大象馆在左边。(Hǎo, dàxiàngguǎn zài zuǒbiān.)" },
+                            { sp: "Con", vi: "Con hổ ở đâu ạ?", en: "Where is the tiger?", jp: "虎はどこ？(Tora wa doko?)", cn: "老虎在哪里？(Lǎohǔ zài nǎlǐ?)" },
+                            { sp: "Mẹ", vi: "Ở phía sau, nhưng đừng lại quá gần nhé.", en: "At the back, but don't get too close.", jp: "奥だよ。でも近づきすぎないでね。(Oku da yo. Demo chikazukisuginaide ne.)", cn: "在后面，不过别靠太近。(Zài hòumiàn, búguò bié kào tài jìn.)" }
+                        ]
+                    }
+                ]
+            },
+            thucvat: {
+                sentences: [
+                    { vi: "Tôi thích trồng hoa ở ban công.", en: "I like growing flowers on the balcony.", jp: "ベランダで花を育てるのが好きです。(Beranda de hana o sodateru no ga suki desu.)", cn: "我喜欢在阳台上种花。(Wǒ xǐhuān zài yángtái shàng zhòng huā.)" },
+                    { vi: "Cây này cần tưới nước mỗi ngày.", en: "This plant needs watering every day.", jp: "この植物は毎日水をやる必要があります。(Kono shokubutsu wa mainichi mizu o yaru hitsuyō ga arimasu.)", cn: "这棵植物需要每天浇水。(Zhè kē zhíwù xūyào měitiān jiāoshuǐ.)" },
+                    { vi: "Mùa thu lá cây chuyển sang màu đỏ.", en: "In autumn the leaves turn red.", jp: "秋になると葉が赤くなります。(Aki ni naru to ha ga akaku narimasu.)", cn: "到了秋天，树叶变红了。(Dào le qiūtiān, shùyè biàn hóng le.)" },
+                    { vi: "Trong rừng có rất nhiều cây thông.", en: "There are many pine trees in the forest.", jp: "森にはたくさんの松の木があります。(Mori ni wa takusan no matsu no ki ga arimasu.)", cn: "森林里有很多松树。(Sēnlín lǐ yǒu hěn duō sōngshù.)" },
+                    { vi: "Tôi tặng mẹ một bó hoa hồng.", en: "I gave my mother a bouquet of roses.", jp: "母にバラの花束をあげました。(Haha ni bara no hanataba o agemashita.)", cn: "我送给妈妈一束玫瑰花。(Wǒ sòng gěi māma yí shù méiguīhuā.)" },
+                    { vi: "Loại nấm này có ăn được không?", en: "Is this mushroom edible?", jp: "このきのこは食べられますか。(Kono kinoko wa taberaremasu ka.)", cn: "这种蘑菇能吃吗？(Zhè zhǒng mógū néng chī ma?)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Ở cửa hàng hoa",
+                        lines: [
+                            { sp: "Khách", vi: "Tôi muốn mua hoa để tặng sinh nhật.", en: "I'd like to buy flowers for a birthday.", jp: "誕生日の花を買いたいです。(Tanjōbi no hana o kaitai desu.)", cn: "我想买生日送的花。(Wǒ xiǎng mǎi shēngrì sòng de huā.)" },
+                            { sp: "Người bán", vi: "Anh muốn hoa hồng hay hoa hướng dương ạ?", en: "Would you like roses or sunflowers?", jp: "バラとひまわり、どちらにしますか。(Bara to himawari, dochira ni shimasu ka.)", cn: "您要玫瑰还是向日葵？(Nín yào méiguī háishi xiàngrìkuí?)" },
+                            { sp: "Khách", vi: "Cho tôi một bó hoa hồng đỏ.", en: "A bouquet of red roses, please.", jp: "赤いバラの花束をください。(Akai bara no hanataba o kudasai.)", cn: "给我一束红玫瑰。(Gěi wǒ yí shù hóng méiguī.)" },
+                            { sp: "Người bán", vi: "Vâng, xin đợi năm phút để tôi gói lại.", en: "Sure, please wait five minutes while I wrap it.", jp: "はい、五分ほどお待ちください。包みます。(Hai, gofun hodo omachi kudasai. Tsutsumimasu.)", cn: "好的，请等五分钟，我来包一下。(Hǎo de, qǐng děng wǔ fēnzhōng, wǒ lái bāo yíxià.)" }
+                        ]
+                    },
+                    {
+                        title: "Chăm sóc cây trong nhà",
+                        lines: [
+                            { sp: "A", vi: "Sao cây này bị héo vậy?", en: "Why is this plant wilting?", jp: "どうしてこの植物は枯れかけているの。(Dōshite kono shokubutsu wa karekakete iru no.)", cn: "这棵植物怎么蔫了？(Zhè kē zhíwù zěnme niān le?)" },
+                            { sp: "B", vi: "Chắc là thiếu nước và thiếu nắng.", en: "Probably not enough water and sunlight.", jp: "水と日光が足りないんだと思う。(Mizu to nikkō ga tarinai n da to omou.)", cn: "可能是缺水，也缺阳光。(Kěnéng shì quē shuǐ, yě quē yángguāng.)" },
+                            { sp: "A", vi: "Vậy mình nên đặt cây ở đâu?", en: "Then where should we put it?", jp: "じゃあ、どこに置いたらいい？(Jā, doko ni oitara ii?)", cn: "那我们该把它放在哪儿？(Nà wǒmen gāi bǎ tā fàng zài nǎr?)" },
+                            { sp: "B", vi: "Đặt gần cửa sổ và tưới hai ngày một lần.", en: "Put it near the window and water it every two days.", jp: "窓の近くに置いて、二日に一回水をやってね。(Mado no chikaku ni oite, futsuka ni ikkai mizu o yatte ne.)", cn: "放在窗户旁边，两天浇一次水。(Fàng zài chuānghu pángbiān, liǎng tiān jiāo yí cì shuǐ.)" }
+                        ]
+                    }
+                ]
+            },
+            sodem: {
+                sentences: [
+                    { vi: "Tôi cần mua hai vé.", en: "I need to buy two tickets.", jp: "チケットを二枚買いたいです。(Chiketto o nimai kaitai desu.)", cn: "我要买两张票。(Wǒ yào mǎi liǎng zhāng piào.)" },
+                    { vi: "Lớp học có ba mươi học sinh.", en: "There are thirty students in the class.", jp: "クラスには三十人の学生がいます。(Kurasu ni wa sanjūnin no gakusei ga imasu.)", cn: "班里有三十个学生。(Bān lǐ yǒu sānshí ge xuésheng.)" },
+                    { vi: "Xin cho tôi thêm một ly nữa.", en: "One more glass, please.", jp: "もう一杯ください。(Mō ippai kudasai.)", cn: "请再给我一杯。(Qǐng zài gěi wǒ yì bēi.)" },
+                    { vi: "Bây giờ là chín giờ mười lăm phút.", en: "It is now nine fifteen.", jp: "今、九時十五分です。(Ima, kuji jūgofun desu.)", cn: "现在九点十五分。(Xiànzài jiǔ diǎn shíwǔ fēn.)" },
+                    { vi: "Tôi đã đọc quyển sách này ba lần.", en: "I have read this book three times.", jp: "この本を三回読みました。(Kono hon o sankai yomimashita.)", cn: "这本书我读过三遍。(Zhè běn shū wǒ dú guò sān biàn.)" },
+                    { vi: "Nhà tôi có hai chiếc xe máy.", en: "My family has two motorbikes.", jp: "家にはバイクが二台あります。(Ie ni wa baiku ga nidai arimasu.)", cn: "我家有两辆摩托车。(Wǒ jiā yǒu liǎng liàng mótuōchē.)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Mua vé tham quan",
+                        lines: [
+                            { sp: "Khách", vi: "Cho tôi hai vé người lớn và một vé trẻ em.", en: "Two adult tickets and one child ticket, please.", jp: "大人二枚と子供一枚をお願いします。(Otona nimai to kodomo ichimai o onegai shimasu.)", cn: "请给我两张成人票和一张儿童票。(Qǐng gěi wǒ liǎng zhāng chéngrénpiào hé yì zhāng értóngpiào.)" },
+                            { sp: "Nhân viên", vi: "Tổng cộng là hai trăm nghìn đồng ạ.", en: "That's two hundred thousand dong in total.", jp: "全部で二十万ドンです。(Zenbu de nijūman don desu.)", cn: "一共二十万盾。(Yígòng èrshí wàn dùn.)" },
+                            { sp: "Khách", vi: "Tôi trả bằng thẻ được không?", en: "Can I pay by card?", jp: "カードで払えますか。(Kādo de haraemasu ka.)", cn: "可以刷卡吗？(Kěyǐ shuākǎ ma?)" },
+                            { sp: "Nhân viên", vi: "Được ạ. Vé của anh đây.", en: "Yes. Here are your tickets.", jp: "はい。チケットをどうぞ。(Hai. Chiketto o dōzo.)", cn: "可以。这是您的票。(Kěyǐ. Zhè shì nín de piào.)" }
+                        ]
+                    },
+                    {
+                        title: "Hỏi giờ và số lượng",
+                        lines: [
+                            { sp: "A", vi: "Bây giờ là mấy giờ rồi?", en: "What time is it now?", jp: "今何時ですか。(Ima nanji desu ka.)", cn: "现在几点了？(Xiànzài jǐ diǎn le?)" },
+                            { sp: "B", vi: "Mười giờ kém năm.", en: "Five to ten.", jp: "十時五分前です。(Jūji gofun mae desu.)", cn: "差五分十点。(Chà wǔ fēn shí diǎn.)" },
+                            { sp: "A", vi: "Còn bao nhiêu người chưa đến?", en: "How many people haven't arrived yet?", jp: "何人まだ来ていませんか。(Nannin mada kiteimasen ka.)", cn: "还有几个人没来？(Hái yǒu jǐ ge rén méi lái?)" },
+                            { sp: "B", vi: "Còn ba người nữa.", en: "Three more people.", jp: "あと三人です。(Ato sannin desu.)", cn: "还有三个人。(Hái yǒu sān ge rén.)" }
+                        ]
+                    }
+                ]
+            },
+            cauhoi: {
+                sentences: [
+                    { vi: "Bạn đến từ nước nào?", en: "Which country are you from?", jp: "どちらの国から来ましたか。(Dochira no kuni kara kimashita ka.)", cn: "你来自哪个国家？(Nǐ láizì nǎge guójiā?)" },
+                    { vi: "Cái này tiếng Nhật gọi là gì?", en: "What is this called in Japanese?", jp: "これは日本語で何と言いますか。(Kore wa Nihongo de nan to iimasu ka.)", cn: "这个用日语怎么说？(Zhège yòng Rìyǔ zěnme shuō?)" },
+                    { vi: "Bạn có thể nhắc lại một lần nữa không?", en: "Could you say that again?", jp: "もう一度言ってもらえますか。(Mō ichido itte moraemasu ka.)", cn: "你能再说一遍吗？(Nǐ néng zài shuō yí biàn ma?)" },
+                    { vi: "Chúng ta gặp nhau lúc mấy giờ?", en: "What time shall we meet?", jp: "何時に会いましょうか。(Nanji ni aimashō ka.)", cn: "我们几点见面？(Wǒmen jǐ diǎn jiànmiàn?)" },
+                    { vi: "Tại sao hôm qua bạn không đến?", en: "Why didn't you come yesterday?", jp: "どうして昨日来なかったのですか。(Dōshite kinō konakatta no desu ka.)", cn: "你昨天为什么没来？(Nǐ zuótiān wèishénme méi lái?)" },
+                    { vi: "Cái nào tốt hơn, cái này hay cái kia?", en: "Which is better, this one or that one?", jp: "これとあれ、どちらがいいですか。(Kore to are, dochira ga ii desu ka.)", cn: "这个和那个，哪个更好？(Zhège hé nàge, nǎge gèng hǎo?)" }
+                ],
+                dialogues: [
+                    {
+                        title: "Làm quen người mới",
+                        lines: [
+                            { sp: "A", vi: "Xin chào, rất vui được gặp bạn.", en: "Hello, nice to meet you.", jp: "こんにちは、はじめまして。(Konnichiwa, hajimemashite.)", cn: "你好，很高兴认识你。(Nǐ hǎo, hěn gāoxìng rènshi nǐ.)" },
+                            { sp: "B", vi: "Chào bạn. Bạn làm nghề gì?", en: "Hello. What do you do?", jp: "こんにちは。お仕事は何ですか。(Konnichiwa. Oshigoto wa nan desu ka.)", cn: "你好。你做什么工作？(Nǐ hǎo. Nǐ zuò shénme gōngzuò?)" },
+                            { sp: "A", vi: "Tôi là lập trình viên. Còn bạn?", en: "I'm a programmer. And you?", jp: "プログラマーです。あなたは？(Puroguramā desu. Anata wa?)", cn: "我是程序员。你呢？(Wǒ shì chéngxùyuán. Nǐ ne?)" },
+                            { sp: "B", vi: "Tôi làm ở ngân hàng. Bạn sống ở đâu?", en: "I work at a bank. Where do you live?", jp: "銀行で働いています。どこに住んでいますか。(Ginkō de hataraiteimasu. Doko ni sundeimasu ka.)", cn: "我在银行工作。你住在哪里？(Wǒ zài yínháng gōngzuò. Nǐ zhù zài nǎlǐ?)" },
+                            { sp: "A", vi: "Tôi sống gần đây, đi bộ khoảng 10 phút.", en: "I live nearby, about ten minutes on foot.", jp: "この近くです。歩いて十分ぐらいです。(Kono chikaku desu. Aruite juppun gurai desu.)", cn: "我住在附近，走路大概十分钟。(Wǒ zhù zài fùjìn, zǒulù dàgài shí fēnzhōng.)" }
+                        ]
+                    },
+                    {
+                        title: "Hỏi đường",
+                        lines: [
+                            { sp: "A", vi: "Xin lỗi, cho hỏi nhà ga ở đâu ạ?", en: "Excuse me, where is the train station?", jp: "すみません、駅はどこですか。(Sumimasen, eki wa doko desu ka.)", cn: "请问，火车站在哪里？(Qǐngwèn, huǒchēzhàn zài nǎlǐ?)" },
+                            { sp: "B", vi: "Bạn đi thẳng, rồi rẽ trái ở ngã tư.", en: "Go straight, then turn left at the intersection.", jp: "まっすぐ行って、交差点を左に曲がってください。(Massugu itte, kōsaten o hidari ni magatte kudasai.)", cn: "你一直走，在十字路口左转。(Nǐ yìzhí zǒu, zài shízì lùkǒu zuǒ zhuǎn.)" },
+                            { sp: "A", vi: "Đi bộ mất bao lâu ạ?", en: "How long does it take on foot?", jp: "歩いてどのくらいかかりますか。(Aruite dono kurai kakarimasu ka.)", cn: "走路要多久？(Zǒulù yào duōjiǔ?)" },
+                            { sp: "B", vi: "Khoảng năm phút thôi.", en: "Only about five minutes.", jp: "五分ぐらいです。(Gofun gurai desu.)", cn: "大概五分钟。(Dàgài wǔ fēnzhōng.)" },
+                            { sp: "A", vi: "Cảm ơn bạn nhiều ạ!", en: "Thank you very much!", jp: "ありがとうございます。(Arigatō gozaimasu.)", cn: "非常感谢！(Fēicháng gǎnxiè!)" }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // Gộp nội dung mở rộng vào database
+        database.forEach(topic => {
+            const ex = extraContent[topic.id];
+            topic.dialogues = (ex && ex.dialogues) ? ex.dialogues : [];
+            if (ex && ex.sentences) topic.sentences = topic.sentences.concat(ex.sentences);
+        });
+
         // Khởi tạo
         const topicListEl = document.getElementById('topic-list');
         const welcomeArea = document.getElementById('welcome-area');
@@ -654,7 +1271,84 @@
         const titleEl = document.getElementById('topic-title');
         const vocabTableBody = document.getElementById('vocab-table-body');
         const sentencesList = document.getElementById('sentences-list');
+        const dialoguesList = document.getElementById('dialogues-list');
+        const dialoguesHeading = document.getElementById('dialogues-heading');
         let currentActiveBtn = null;
+        let currentTopic = null;
+
+        // ===== PHÁT ÂM (Web Speech API) =====
+        const synth = window.speechSynthesis;
+        let voices = [];
+        function loadVoices() { voices = synth ? synth.getVoices() : []; }
+        if (synth) { loadVoices(); synth.onvoiceschanged = loadVoices; }
+
+        function pickVoice(lang) {
+            const base = lang.split('-')[0].toLowerCase();
+            const norm = v => (v.lang || '').replace('_', '-').toLowerCase();
+            return voices.find(v => norm(v) === lang.toLowerCase())
+                || voices.find(v => norm(v).startsWith(base));
+        }
+
+        let currentSpeakBtn = null;
+        function speak(text, lang, btn) {
+            if (!synth) { alert('Trình duyệt này không hỗ trợ phát âm.'); return; }
+            synth.cancel();
+            if (currentSpeakBtn) currentSpeakBtn.classList.remove('speaking');
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = lang;
+            u.rate = 0.85;
+            const v = pickVoice(lang);
+            if (v) u.voice = v;
+            currentSpeakBtn = btn || null;
+            if (btn) btn.classList.add('speaking');
+            u.onend = u.onerror = () => { if (btn) btn.classList.remove('speaking'); };
+            setTimeout(() => synth.speak(u), 60);
+        }
+
+        // Bỏ phần phiên âm trong ngoặc: "私は学生です。(Watashi wa...)" -> "私は学生です。"
+        function stripPron(t) { return String(t).replace(/\s*[（(][^（()）]*[)）]\s*$/, '').trim(); }
+        // Lấy phương án đầu khi từ có dạng "伯父 / 叔父"
+        function firstAlt(t) { return String(t).split('/')[0].trim(); }
+        function escAttr(t) {
+            return String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+                            .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+        function speakBtn(text, lang, extraCls) {
+            return `<button type="button" class="speak-btn ${extraCls || ''}" data-speak="${escAttr(text)}" data-lang="${lang}" title="Nghe phát âm"><i class="fas fa-volume-high"></i></button>`;
+        }
+
+        // Bắt sự kiện ở pha capture để không làm lật thẻ flashcard
+        document.addEventListener('click', (e) => {
+            if (!e.target || !e.target.closest) return;
+            const btn = e.target.closest('.speak-btn');
+            if (!btn) return;
+            e.preventDefault();
+            e.stopPropagation();
+            speak(btn.dataset.speak, btn.dataset.lang, btn);
+        }, true);
+
+        // ===== TIẾN ĐỘ "ĐÃ THUỘC" (localStorage) =====
+        const LEARNED_KEY = 'sotay-tuvung:learned';
+        let learnedSet = new Set();
+        try { learnedSet = new Set(JSON.parse(localStorage.getItem(LEARNED_KEY) || '[]')); } catch (e) {}
+
+        const wordKey = v => v.vi + '|' + v.en;
+        const isLearned = v => learnedSet.has(wordKey(v));
+        const countLearned = list => list.filter(isLearned).length;
+        function saveLearned() {
+            try { localStorage.setItem(LEARNED_KEY, JSON.stringify([...learnedSet])); } catch (e) {}
+        }
+        function toggleLearned(v) {
+            const k = wordKey(v);
+            if (learnedSet.has(k)) learnedSet.delete(k); else learnedSet.add(k);
+            saveLearned();
+        }
+        function updateTopicProgress() {
+            if (!currentTopic) return;
+            const done = countLearned(currentTopic.vocab);
+            document.getElementById('topic-progress').innerHTML =
+                `Đã thuộc <span class="font-bold text-emerald-600">${done}</span>/${currentTopic.vocab.length} từ của chủ đề này`;
+        }
 
         // Xử lý Mobile Sidebar
         const sidebar = document.getElementById('sidebar');
@@ -678,11 +1372,23 @@
 
         // Xử lý dữ liệu Flashcard
         let allVocab = [];
+        database.forEach(topic => { allVocab = allVocab.concat(topic.vocab); });
+
+        let fcSource = allVocab;      // bộ từ gốc đang chọn (tổng hợp hoặc 1 chủ đề)
+        let fcDeck = [];              // bộ đang học sau khi lọc "chưa thuộc"
+        let fcDeckName = 'Tổng hợp';
+        let fcFromTopic = null;       // chủ đề đã mở flashcard (để quay lại)
         let currentFcIndex = 0;
-        database.forEach(topic => {
-            allVocab = allVocab.concat(topic.vocab);
-        });
-        document.getElementById('fc-count').innerText = allVocab.length;
+
+        const fcCountEl = document.getElementById('fc-count');
+        const fcDeckNameEl = document.getElementById('fc-deck-name');
+        const fcLearnedCountEl = document.getElementById('fc-learned-count');
+        const fcHideLearnedEl = document.getElementById('fc-hide-learned');
+        const fcLearnedBtn = document.getElementById('fc-learned-btn');
+        const fcLearnedBadge = document.getElementById('fc-learned-badge');
+        const fcEmptyEl = document.getElementById('fc-empty');
+        const fcContainerEl = document.getElementById('flashcard-container');
+        const fcBackBtn = document.getElementById('fc-back');
 
         // Render Sidebar
         database.forEach(topic => {
@@ -718,33 +1424,112 @@
             }
             btnFlashcard.classList.add('bg-indigo-100', 'border-indigo-300');
             
-            welcomeArea.classList.add('hidden');
-            contentArea.classList.add('hidden');
-            flashcardArea.classList.remove('hidden');
-            
-            currentFcIndex = 0;
-            renderFlashcard();
+            startFlashcard(allVocab, 'Tổng hợp', null);
 
             // Tự động đóng menu trên điện thoại khi chọn xong
             if(window.innerWidth < 768) toggleSidebar(false);
         };
 
+        // Học flashcard riêng của chủ đề đang mở
+        document.getElementById('btn-topic-flashcard').onclick = () => {
+            if (!currentTopic) return;
+            startFlashcard(currentTopic.vocab, currentTopic.title, currentTopic);
+        };
+
+        fcBackBtn.onclick = () => {
+            if (fcFromTopic) renderTopic(fcFromTopic);
+            flashcardArea.classList.add('hidden');
+        };
+
+        // Mở một bộ flashcard
+        function startFlashcard(list, name, topic) {
+            fcSource = list;
+            fcDeckName = name;
+            fcFromTopic = topic || null;
+            currentFcIndex = 0;
+
+            welcomeArea.classList.add('hidden');
+            contentArea.classList.add('hidden');
+            flashcardArea.classList.remove('hidden');
+            fcBackBtn.classList.toggle('hidden', !fcFromTopic);
+
+            buildDeck();
+        }
+
+        // Dựng bộ thẻ theo bộ lọc "chỉ học từ chưa thuộc"
+        function buildDeck() {
+            fcDeck = fcHideLearnedEl.checked ? fcSource.filter(v => !isLearned(v)) : fcSource.slice();
+            if (currentFcIndex >= fcDeck.length) currentFcIndex = 0;
+            renderFlashcard();
+        }
+
+        fcHideLearnedEl.onchange = () => { currentFcIndex = 0; buildDeck(); };
+
+        fcLearnedBtn.onclick = () => {
+            const v = fcDeck[currentFcIndex];
+            if (!v) return;
+            toggleLearned(v);
+            if (fcHideLearnedEl.checked && isLearned(v)) {
+                fcDeck.splice(currentFcIndex, 1);
+                if (currentFcIndex >= fcDeck.length) currentFcIndex = 0;
+            }
+            renderFlashcard();
+            updateTopicProgress();
+        };
+
+        document.getElementById('fc-reset').onclick = () => {
+            if (!confirm('Xóa toàn bộ tiến độ "đã thuộc"?')) return;
+            learnedSet.clear();
+            saveLearned();
+            buildDeck();
+            updateTopicProgress();
+        };
+
         // Hàm Render một thẻ Flashcard
         const flashcardInner = document.getElementById('flashcard-inner');
         function renderFlashcard() {
-            if (allVocab.length === 0) return;
-            const v = allVocab[currentFcIndex];
-            
+            fcCountEl.innerText = fcSource.length;
+            fcDeckNameEl.innerText = fcDeckName;
+            fcLearnedCountEl.innerText = countLearned(fcSource);
+
+            // Bộ rỗng (đã thuộc hết khi đang bật bộ lọc)
+            if (fcDeck.length === 0) {
+                fcContainerEl.classList.add('hidden');
+                fcLearnedBtn.classList.add('hidden');
+                fcEmptyEl.classList.remove('hidden');
+                document.getElementById('fc-progress').innerText = '0 / 0';
+                return;
+            }
+            fcContainerEl.classList.remove('hidden');
+            fcLearnedBtn.classList.remove('hidden');
+            fcEmptyEl.classList.add('hidden');
+
+            const v = fcDeck[currentFcIndex];
+
             // Mặt trước
             document.getElementById('fc-vi').innerText = v.vi;
             // Mặt sau
             document.getElementById('fc-en').innerText = v.en;
             document.getElementById('fc-jp-word').innerText = v.jp.word;
-            document.getElementById('fc-jp-pron').innerText = `🎧 ${v.jp.pron} (HV: ${v.jp.hv})`;
+            document.getElementById('fc-jp-pron').innerText = `${v.jp.pron} (HV: ${v.jp.hv})`;
             document.getElementById('fc-cn-word').innerText = v.cn.word;
-            document.getElementById('fc-cn-pron').innerText = `🎧 ${v.cn.pron} (HV: ${v.cn.hv})`;
-            
-            document.getElementById('fc-progress').innerText = `${currentFcIndex + 1} / ${allVocab.length}`;
+            document.getElementById('fc-cn-pron').innerText = `${v.cn.pron} (HV: ${v.cn.hv})`;
+            // Nút phát âm
+            document.getElementById('fc-en-speak').innerHTML = speakBtn(v.en, 'en-US', 'speak-btn-lg');
+            document.getElementById('fc-jp-speak').innerHTML = speakBtn(firstAlt(v.jp.word), 'ja-JP', 'speak-btn-lg');
+            document.getElementById('fc-cn-speak').innerHTML = speakBtn(firstAlt(v.cn.word), 'zh-CN', 'speak-btn-lg');
+
+            // Trạng thái đã thuộc
+            const done = isLearned(v);
+            fcLearnedBadge.classList.toggle('hidden', !done);
+            fcLearnedBtn.className = done
+                ? 'px-6 py-3 rounded-full border-2 font-medium transition bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600'
+                : 'px-6 py-3 rounded-full border-2 font-medium transition bg-white border-slate-200 text-slate-600 hover:border-emerald-400 hover:text-emerald-600';
+            fcLearnedBtn.innerHTML = done
+                ? '<i class="fas fa-check mr-2"></i>Đã thuộc'
+                : '<i class="far fa-circle-check mr-2"></i>Đánh dấu đã thuộc';
+
+            document.getElementById('fc-progress').innerText = `${currentFcIndex + 1} / ${fcDeck.length}`;
             flashcardInner.classList.remove('rotate-y-180'); // Mặc định hiển thị mặt Tiếng Việt
         }
 
@@ -755,24 +1540,29 @@
 
         // Nút điều hướng Flashcard
         document.getElementById('fc-next').onclick = () => {
-            currentFcIndex = (currentFcIndex + 1) % allVocab.length;
+            if (!fcDeck.length) return;
+            currentFcIndex = (currentFcIndex + 1) % fcDeck.length;
             renderFlashcard();
         };
         document.getElementById('fc-prev').onclick = () => {
-            currentFcIndex = (currentFcIndex - 1 + allVocab.length) % allVocab.length;
+            if (!fcDeck.length) return;
+            currentFcIndex = (currentFcIndex - 1 + fcDeck.length) % fcDeck.length;
             renderFlashcard();
         };
         document.getElementById('fc-shuffle').onclick = () => {
-            allVocab = allVocab.sort(() => Math.random() - 0.5);
+            fcDeck.sort(() => Math.random() - 0.5);
             currentFcIndex = 0;
             renderFlashcard();
         };
 
         // Hàm render nội dung bài học
         function renderTopic(topic) {
+            currentTopic = topic;
             welcomeArea.classList.add('hidden');
+            flashcardArea.classList.add('hidden');
             contentArea.classList.remove('hidden');
             titleEl.innerText = topic.title;
+            updateTopicProgress();
 
             // Render Từ vựng
             vocabTableBody.innerHTML = '';
@@ -780,17 +1570,28 @@
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition-colors';
                 
+                const mark = isLearned(item)
+                    ? '<i class="fas fa-circle-check text-emerald-500 mr-2" title="Đã thuộc"></i>' : '';
+
                 tr.innerHTML = `
-                    <td class="p-4 font-semibold text-slate-800">${item.vi}</td>
-                    <td class="p-4 text-slate-600">${item.en}</td>
+                    <td class="p-4 font-semibold text-slate-800">${mark}${item.vi}</td>
+                    <td class="p-4 text-slate-600">
+                        <div class="flex items-center gap-2">
+                            <span>${item.en}</span>${speakBtn(item.en, 'en-US')}
+                        </div>
+                    </td>
                     <td class="p-4">
-                        <div class="text-lg font-medium text-slate-800">${item.jp.word}</div>
-                        <div class="text-sm text-slate-500">🎧 ${item.jp.pron}</div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg font-medium text-slate-800">${item.jp.word}</span>${speakBtn(firstAlt(item.jp.word), 'ja-JP')}
+                        </div>
+                        <div class="text-sm text-slate-500">${item.jp.pron}</div>
                         <div class="text-xs font-semibold text-rose-600 mt-1">HV: ${item.jp.hv}</div>
                     </td>
                     <td class="p-4">
-                        <div class="text-lg font-medium text-slate-800">${item.cn.word}</div>
-                        <div class="text-sm text-slate-500">🎧 ${item.cn.pron}</div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg font-medium text-slate-800">${item.cn.word}</span>${speakBtn(firstAlt(item.cn.word), 'zh-CN')}
+                        </div>
+                        <div class="text-sm text-slate-500">${item.cn.pron}</div>
                         <div class="text-xs font-semibold text-rose-600 mt-1">HV: ${item.cn.hv}</div>
                     </td>
                 `;
@@ -804,11 +1605,62 @@
                 div.className = 'bg-white p-5 rounded-xl shadow-sm border border-slate-200';
                 div.innerHTML = `
                     <div class="font-bold text-slate-800 mb-2 pb-2 border-b border-slate-100">🇻🇳 ${sentence.vi}</div>
-                    <div class="text-slate-600 mb-1">🇬🇧 ${sentence.en}</div>
-                    <div class="text-slate-700 font-medium mb-1">🇯🇵 ${sentence.jp}</div>
-                    <div class="text-slate-700 font-medium">🇨🇳 ${sentence.cn}</div>
+                    <div class="flex items-start gap-2 mb-1"><span class="text-slate-600">🇬🇧 ${sentence.en}</span>${speakBtn(sentence.en, 'en-US')}</div>
+                    <div class="flex items-start gap-2 mb-1"><span class="text-slate-700 font-medium">🇯🇵 ${sentence.jp}</span>${speakBtn(stripPron(sentence.jp), 'ja-JP')}</div>
+                    <div class="flex items-start gap-2"><span class="text-slate-700 font-medium">🇨🇳 ${sentence.cn}</span>${speakBtn(stripPron(sentence.cn), 'zh-CN')}</div>
                 `;
                 sentencesList.appendChild(div);
+            });
+
+            // Render Hội thoại ngắn
+            renderDialogues(topic.dialogues || []);
+        }
+
+        // Hàm render các đoạn hội thoại ngắn
+        function renderDialogues(dialogues) {
+            dialoguesList.innerHTML = '';
+            if (!dialogues.length) {
+                dialoguesHeading.classList.add('hidden');
+                dialoguesList.classList.add('hidden');
+                return;
+            }
+            dialoguesHeading.classList.remove('hidden');
+            dialoguesList.classList.remove('hidden');
+
+            dialogues.forEach((dlg, dIndex) => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden';
+
+                const speakers = [];
+                dlg.lines.forEach(l => { if (!speakers.includes(l.sp)) speakers.push(l.sp); });
+
+                const linesHtml = dlg.lines.map(line => {
+                    const isFirst = speakers.indexOf(line.sp) === 0;
+                    const align = isFirst ? 'justify-start' : 'justify-end';
+                    const bubble = isFirst
+                        ? 'bg-slate-50 border-slate-200 rounded-tl-sm'
+                        : 'bg-emerald-50 border-emerald-100 rounded-tr-sm';
+                    const label = isFirst ? 'text-slate-500' : 'text-emerald-700';
+                    return `
+                        <div class="flex ${align}">
+                            <div class="max-w-full md:max-w-[85%] border ${bubble} rounded-2xl px-4 py-3">
+                                <div class="text-xs font-bold uppercase tracking-wide ${label} mb-1">${line.sp}</div>
+                                <div class="font-semibold text-slate-800 mb-2 pb-2 border-b border-slate-200/70">🇻🇳 ${line.vi}</div>
+                                <div class="flex items-start gap-2 mb-1"><span class="text-sm text-slate-600">🇬🇧 ${line.en}</span>${speakBtn(line.en, 'en-US')}</div>
+                                <div class="flex items-start gap-2 mb-1"><span class="text-sm text-slate-700 font-medium">🇯🇵 ${line.jp}</span>${speakBtn(stripPron(line.jp), 'ja-JP')}</div>
+                                <div class="flex items-start gap-2"><span class="text-sm text-slate-700 font-medium">🇨🇳 ${line.cn}</span>${speakBtn(stripPron(line.cn), 'zh-CN')}</div>
+                            </div>
+                        </div>`;
+                }).join('');
+
+                card.innerHTML = `
+                    <div class="bg-emerald-50 border-b border-emerald-100 px-5 py-3 flex items-center gap-3">
+                        <span class="w-7 h-7 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center justify-center shrink-0">${dIndex + 1}</span>
+                        <h4 class="font-bold text-slate-800">${dlg.title}</h4>
+                    </div>
+                    <div class="p-5 flex flex-col gap-4">${linesHtml}</div>
+                `;
+                dialoguesList.appendChild(card);
             });
         }
     </script>
